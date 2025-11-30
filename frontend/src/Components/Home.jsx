@@ -32,7 +32,7 @@ const Home = () => {
           {/* CTA BUTTON */}
           <button
             onClick={handleStart}
-            className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 rounded-full text-white font-semibold shadow-xl hover:scale-105 transition"
+            className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 rounded-full text-black font-semibold shadow-xl hover:scale-105 transition"
           >
             Get Started →
           </button>

@@ -7,6 +7,8 @@ import ApplyJobs from './Components/Jobs.jsx';
 import PostJob from './Components/PostJob.jsx';
 import Interview from './Components/Interview/Interview.jsx';
 import ProtectedRoute from './Components/ProtectedRoute.jsx';
+import Complete from './Components/Complete.jsx';
+import Profile from './Components/Profile.jsx';
 
 function App() {
   return (
@@ -52,6 +54,24 @@ function App() {
             element={
               <ProtectedRoute>
                 <Interview />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/Complete/:token"
+            element={
+              <ProtectedRoute>
+                <Complete />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/Profile"
+            element={
+              <ProtectedRoute>
+                <Profile/>
               </ProtectedRoute>
             }
           />

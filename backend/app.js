@@ -47,13 +47,17 @@ const jobsRouter = require('./Routers/jobsRouter');
 const InterviewRouter = require('./Routers/Interview');
 const extractPdfText = require('./Routers/resumeScanner')
 const Authentication = require('./Routers/Authentication');
-const { authorizeHeader } = require('livekit-server-sdk');
+const completeTestToken = require('./Routers/TestComplete')
+const userData = require('./Routers/UserData')
+const geminiRouter = require('./Routers/geminiRouter');
 
 app.use('/api', jobsRouter);
 app.use('/api', InterviewRouter);
 app.use('/api', extractPdfText);
 app.use('/api', Authentication);
-
+app.use('/api', completeTestToken)
+app.use('/api', userData);
+app.use('/api/gemini', geminiRouter);
 
 
 // basic root

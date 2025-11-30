@@ -12,8 +12,55 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom"; 
 
+// --- 1. NEW COMPONENT: Loading Animation (using bg-green-500) ---
+const JobsLoader = () => (
+    <div className="flex space-x-2 justify-center items-center h-48">
+        <span className="sr-only">Loading jobs...</span>
+        {/* Dot 1 */}
+        <motion.div 
+            className="h-4 w-4 bg-green-500 rounded-full"
+            animate={{ 
+                y: [0, -10, 0] 
+            }}
+            transition={{
+                duration: 0.8,
+                repeat: Infinity,
+                ease: "easeInOut",
+            }}
+        />
+        {/* Dot 2 */}
+        <motion.div 
+            className="h-4 w-4 bg-green-500 rounded-full"
+            animate={{ 
+                y: [0, -10, 0] 
+            }}
+            transition={{
+                duration: 0.8,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: 0.2, // Staggered delay
+            }}
+        />
+        {/* Dot 3 */}
+        <motion.div 
+            className="h-4 w-4 bg-green-500 rounded-full"
+            animate={{ 
+                y: [0, -10, 0] 
+            }}
+            transition={{
+                duration: 0.8,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: 0.4, // Staggered delay
+            }}
+        />
+    </div>
+);
+// -----------------------------------------------------------------
+
+
 export default function Jobs() {
-  const navigate = useNavigate(); // Initialize useNavigate
+  const navigate = useNavigate();
   const now = new Date();
   const formatted = now.toLocaleDateString("en-GB", {
     day: "2-digit",
@@ -31,12 +78,25 @@ export default function Jobs() {
   const [matchedSecondarySkills, setMatchedSecondarySkills] = useState([]);
   const [interviewStatus, setInterviewStatus] = useState("pending"); 
   const [resumeTextContent, setResumeTextContent] = useState(""); 
+  
+  // --- 2. NEW STATE: Loading Status ---
+  const [isLoading, setIsLoading] = useState(true); 
 
   useEffect(() => {
+    // --- 3. Set loading state to TRUE before fetch ---
+    setIsLoading(true); 
     axios
       .get("http://localhost:8080/api/jobs")
-      .then((res) => setJobs(res.data || []))
-      .catch(() => toast.error("Failed to load jobs"));
+      .then((res) => {
+        setJobs(res.data || []);
+        // --- 4. Set loading state to FALSE on success ---
+        setIsLoading(false); 
+      })
+      .catch(() => {
+        toast.error("Failed to load jobs");
+        // --- 5. Set loading state to FALSE on failure ---
+        setIsLoading(false); 
+      });
   }, []);
   
   useEffect(() => {
@@ -136,7 +196,7 @@ export default function Jobs() {
         toast.success(`Matched ${totalMatched} skills! Interview is ready.`);
       } else {
         setInterviewStatus("pending");
-        toast.warn(`Only matched ${totalMatched} skills. Needs more skills.`);
+        toast.warn(`Your Resume is not good for this Job. Only matched ${totalMatched} skills. Please update your resume.`);
       }
 
     } catch (err) {
@@ -250,55 +310,63 @@ export default function Jobs() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        </div>
-
-      {/* Job Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {filtered.map((job, index) => (
-          <motion.div
-            key={index}
-            onClick={() => setActiveJob(job)}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.05 }}
-            className="bg-black/40 border border-white/10 rounded-2xl p-6 backdrop-blur-xl hover:border-green-400 transition-all duration-300 shadow-xl cursor-pointer"
-          >
-            <div className="flex items-center gap-4 mb-4">
-              <img
-                src={job.profilePhoto}
-                alt="profile"
-                className="w-12 h-12 rounded-full object-cover border border-white/10"
-              />
-              <div>
-                <p className="text-lg font-semibold">{job.posterName}</p>
-                <p className="text-xs opacity-60">{job.gender}</p>
-              </div>
-            </div>
-
-            <h2 className="text-xl font-bold mb-2 text-green-400">
-              {job.jobTitle}
-            </h2>
-            <p className="opacity-80 text-sm mb-2">Role: {job.jobRole}</p>
-            <p className="opacity-60 text-sm mb-2">Location: {job.location}</p>
-            <p className="opacity-60 text-sm mb-2">Posted: {job.postedTime}</p>
-
-            <p className="opacity-80 text-sm mt-4 line-clamp-3">
-              {job.jobDescription}
-            </p>
-
-            <div className="mt-6 flex justify-between items-center">
-              <span className="text-sm opacity-80">{job.workType}</span>
-              <div className="flex gap-2 hover:bg-zinc-700 rounded-full pl-2 pr-2 py-1">
-                <FaRegStar className="text-yellow-500 mt-1" />
-                <span className="text-yellow-400">{job.rating}</span>
-              </div>
-            </div>
-          </motion.div>
-        ))}
       </div>
 
+    {/* --- 6. CONDITIONAL RENDERING --- */}
+    {isLoading ? (
+        <JobsLoader />
+    ) : (
+        <>
+            {/* Job Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {filtered.map((job, index) => (
+                    <motion.div
+                        key={index}
+                        onClick={() => setActiveJob(job)}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="bg-black/40 border border-white/10 rounded-2xl p-6 backdrop-blur-xl hover:border-green-400 transition-all duration-300 shadow-xl cursor-pointer"
+                    >
+                        <div className="flex items-center gap-4 mb-4">
+                            <img
+                                src={job.profilePhoto}
+                                alt="profile"
+                                className="w-12 h-12 rounded-full object-cover border border-white/10"
+                            />
+                            <div>
+                                <p className="text-lg font-semibold">{job.posterName}</p>
+                                <p className="text-xs opacity-60">{job.gender}</p>
+                            </div>
+                        </div>
 
-      {/* Drawer */}
+                        <h2 className="text-xl font-bold mb-2 text-green-400">
+                            {job.jobTitle}
+                        </h2>
+                        <p className="opacity-80 text-sm mb-2">Role: {job.jobRole}</p>
+                        <p className="opacity-60 text-sm mb-2">Location: {job.location}</p>
+                        <p className="opacity-60 text-sm mb-2">Posted: {job.postedTime}</p>
+
+                        <p className="opacity-80 text-sm mt-4 line-clamp-3">
+                            {job.jobDescription}
+                        </p>
+
+                        <div className="mt-6 flex justify-between items-center">
+                            <span className="text-sm opacity-80">{job.workType}</span>
+                            <div className="flex gap-2 hover:bg-zinc-700 rounded-full pl-2 pr-2 py-1">
+                                <FaRegStar className="text-yellow-500 mt-1" />
+                                <span className="text-yellow-400">{job.rating}</span>
+                            </div>
+                        </div>
+                    </motion.div>
+                ))}
+            </div>
+        </>
+    )}
+    {/* ----------------------------------- */}
+
+
+      {/* Drawer (Rendered conditionally as before) */}
       {activeJob && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-end z-50">
           <div className="w-full max-w-5xl h-full bg-black/80 border-l border-white/10 overflow-y-auto p-8">
@@ -322,20 +390,21 @@ export default function Jobs() {
                       <p>Overall</p>
                     </div>
 
-                    {/* --- UPDATED: Interview Readiness Ping --- */}
-                   <div className="flex gap-2 mt-2 border border-green-500 w-32 justify-center rounded-full">
-                    <span className="pt-1">
-                      <span className="relative flex h-3 w-3 mt-1">
-                        <span 
-                          className={`animate-ping absolute inline-flex h-full w-full rounded-full ${getPingClasses(interviewStatus)}`}
-                        ></span>
-                        <span 
-                          className={`relative inline-flex mt-[2px] ml-[2px] h-2 w-2 rounded-full ${getDotClasses(interviewStatus)}`}
-                        ></span>
-                      </span>
-                    </span>
-                    <p>{getStatusText(interviewStatus)}</p>
-                  </div>
+                    <div className="flex gap-2 mt-2 border border-green-500 w-32 justify-center rounded-full">
+                        <span className="pt-1">
+                            <span className="relative flex h-3 w-3 mt-1">
+                            {/* Green ping */}
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500"></span>
+
+                            {/* Green dot */}
+                            <span className="relative inline-flex mt-[2px] ml-[2px] h-2 w-2 rounded-full bg-green-500"></span>
+                            </span>
+                        </span>
+
+                        {/* Active Text */}
+                        <p className="font-medium">Active</p>
+                    </div>
+
 
                   </div>
                   <p>
@@ -436,8 +505,8 @@ export default function Jobs() {
                     </div>
                     <div>
                       <h1>Technical Interview</h1>
-                      <p className="text-gray-500">
-                        1 hour with <i>CareerPilot</i>
+                      <p className="text-gray-400">
+                        Interview with <i>CareerPilot</i>
                       </p>
                     </div>
                   </div>
