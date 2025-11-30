@@ -1,3 +1,4 @@
+// Correct Model (No changes needed)
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({

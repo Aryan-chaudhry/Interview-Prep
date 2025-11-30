@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 const jobSchema = new mongoose.Schema({
   posterName: { type: String, required: true },
+  email:{type:String, required:true},
   gender: { type: String, enum: ["Male", "Female", "Other"], required: true },
   profilePhoto: { type: String, required: true },
 

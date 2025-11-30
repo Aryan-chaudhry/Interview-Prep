@@ -9,7 +9,7 @@ const Home = () => {
   }
 
   return (
-   <div className={`min-h-screen bg-gradient-to-br from-zinc-900 via-zinc-950 to-black text-white p-10 
+    <div className={`min-h-screen bg-gradient-to-br from-zinc-900 via-zinc-950 to-black text-white p-10 pl-30
     transition-all duration-300`}>
 
       {/* HERO SECTION */}
@@ -18,7 +18,10 @@ const Home = () => {
         {/* LEFT TEXT SECTION */}
         <div className="max-w-xl space-y-6 mt-10 lg:mt-0">
           <h1 className="text-4xl lg:text-6xl font-bold leading-tight">
-            A New Way to <span className="bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent">Prepare</span>
+            A New Way to{" "}
+            <span className="bg-gradient-to-r from-green-400 to-green-500 bg-clip-text text-transparent">
+              Prepare
+            </span>
           </h1>
 
           <p className="text-gray-400 text-lg">
@@ -27,7 +30,10 @@ const Home = () => {
           </p>
 
           {/* CTA BUTTON */}
-          <button onClick={handleStart} className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-500 rounded-full text-white font-semibold shadow-xl hover:scale-105 transition">
+          <button
+            onClick={handleStart}
+            className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 rounded-full text-white font-semibold shadow-xl hover:scale-105 transition"
+          >
             Get Started →
           </button>
         </div>
@@ -39,19 +45,19 @@ const Home = () => {
                           hover:scale-105 floating-card">
             
             <div className="flex gap-3 mb-5">
-              <div className="w-10 h-10 rounded-lg bg-indigo-500"></div>
-              <div className="w-10 h-10 rounded-lg bg-purple-500"></div>
-              <div className="w-10 h-10 rounded-lg bg-pink-500"></div>
-              <div className="w-10 h-10 rounded-lg bg-blue-500"></div>
+              <div className="w-10 h-10 rounded-lg bg-green-500"></div>
+              <div className="w-10 h-10 rounded-lg bg-green-400"></div>
+              <div className="w-10 h-10 rounded-lg bg-green-300"></div>
+              <div className="w-10 h-10 rounded-lg bg-green-600"></div>
             </div>
 
             <div className="space-y-3">
               <div className="w-full h-3 bg-zinc-700/60 rounded"></div>
               <div className="w-3/4 h-3 bg-zinc-700/60 rounded"></div>
 
-              <div className="w-1/2 h-3 bg-indigo-500/60 rounded mt-4"></div>
-              <div className="w-1/4 h-3 bg-purple-500/60 rounded"></div>
-              <div className="w-1/3 h-3 bg-pink-500/60 rounded"></div>
+              <div className="w-1/2 h-3 bg-green-500/60 rounded mt-4"></div>
+              <div className="w-1/4 h-3 bg-green-400/60 rounded"></div>
+              <div className="w-1/3 h-3 bg-green-300/60 rounded"></div>
             </div>
           </div>
         </div>
@@ -60,7 +66,7 @@ const Home = () => {
 
       {/* SUB SECTION */}
       <div className="mt-24 text-center">
-        <h2 className="text-3xl font-bold bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
+        <h2 className="text-3xl font-bold bg-gradient-to-r from-green-500 to-green-400 bg-clip-text text-transparent">
           Start Exploring
         </h2>
         <p className="text-gray-400 max-w-2xl mx-auto mt-3">

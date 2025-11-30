@@ -1,124 +1,202 @@
-import React, { useState } from "react";
-import { NavLink } from "react-router-dom";
-import { MdWork, MdOutlineVideoCall } from "react-icons/md";
+import React, { useState, useEffect } from "react";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
+import {
+  MdWork,
+  MdOutlineVideoCall,
+  MdAddCircleOutline,
+  MdPersonSearch,
+} from "react-icons/md";
 import { GoHomeFill } from "react-icons/go";
 import { IoMdNotifications } from "react-icons/io";
 import { FiSettings } from "react-icons/fi";
 import { BiLogIn, BiLogOut } from "react-icons/bi";
+import { FaAngleDown } from "react-icons/fa";
 import Logo from "../assets/Logo.png";
 
 const SideBar = () => {
   const [open, setOpen] = useState(false);
+  const [openJobs, setOpenJobs] = useState(false);
+  const [openFooterSettings, setOpenFooterSettings] = useState(false);
+
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation(); // 👈 Detect route changes
+
+  // ✔ React to LOGIN instantly when route changes
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    setIsLoggedIn(!!token);
+  }, [location]);
+
+  // ✔ Logout handler
+  const handleLogout = () => {
+    localStorage.removeItem("authToken");
+    setIsLoggedIn(false);
+    navigate("/login");
+  };
 
   return (
     <div
-      className={`fixed top-0 left-0 h-screen bg-zinc-950 border-r border-zinc-800 p-4 transition-all duration-300 z-50
+      className={`fixed top-0 left-0 h-screen bg-[#0d0f12] border-r border-zinc-800 px-4 py-6 transition-all duration-300 shadow-xl z-80
         ${open ? "w-64" : "w-20"}`}
     >
-
+      {/* LOGO + TOGGLE */}
       <div
-        className="flex items-center gap-1 cursor-pointer"
+        className="flex items-center gap-3 cursor-pointer group"
         onClick={() => setOpen(!open)}
       >
         <img
           src={Logo}
           alt="logo"
-          width={open ? 90 : 60}
-          className="animate-pulse"
+          width={open ? 75 : 55}
+          className="transition-all duration-300 group-hover:scale-105 animate-pulse"
         />
+
         {open && (
-          <h1 className="bg-gradient-to-r from-indigo-600 via-purple-500 to-indigo-500 bg-clip-text text-transparent text-2xl font-semibold">
+          <h1 className="text-xl font-semibold text-white tracking-wide">
             CareerPilot
           </h1>
         )}
       </div>
 
-      <hr className="border-zinc-700 mt-4" />
+      <div className="mt-6 bg-zinc-800/50 h-[1px] w-full" />
 
-      {/* MENU */}
-      <div className="mt-8 flex flex-col gap-2">
-
-        {/* Home */}
-        <NavLink
+      {/* MAIN MENU */}
+      <div className="mt-6 flex flex-col gap-2">
+        <SidebarItem
           to="/"
-          className="flex items-center gap-3 p-3 rounded-md hover:bg-zinc-800 transition"
-        >
-          <GoHomeFill size={28} className="text-indigo-400" />
-          {open && <p className="text-indigo-400 text-lg">Home</p>}
-        </NavLink>
+          icon={<GoHomeFill size={24} />}
+          label="Home"
+          open={open}
+        />
 
-        {/* Interview */}
-        <NavLink
+        <SidebarItem
           to="/interview"
-          className="flex items-center gap-3 p-3 rounded-md hover:bg-zinc-800 transition"
-        >
-          <MdOutlineVideoCall size={28} className="text-indigo-400" />
-          {open && <p className="text-indigo-400 text-lg">Interview</p>}
-        </NavLink>
+          icon={<MdOutlineVideoCall size={24} />}
+          label="Interview"
+          open={open}
+        />
 
-        {/* Jobs */}
-        <NavLink
-          to="/jobs"
-          className="flex items-center gap-3 p-3 rounded-md hover:bg-zinc-800 transition"
-        >
-          <MdWork size={28} className="text-indigo-400" />
-          {open && <p className="text-indigo-400 text-lg">Jobs</p>}
-        </NavLink>
+        {/* JOBS DROPDOWN */}
+        <div className="w-full">
+          <button
+            onClick={() => setOpenJobs(!openJobs)}
+            className="flex items-center w-full gap-3 p-3 rounded-lg hover:bg-zinc-800/60 transition"
+          >
+            <MdWork size={24} className="text-green-600" />
 
-        {/* Notifications */}
-        <NavLink
+            {open && (
+              <>
+                <p className="text-white font-medium">Jobs</p>
+                <FaAngleDown
+                  className={`ml-auto text-white transition-transform duration-300 ${
+                    openJobs ? "rotate-180" : ""
+                  }`}
+                />
+              </>
+            )}
+          </button>
+
+          {open && openJobs && (
+            <div className="ml-10 mt-2 flex flex-col gap-2 animate-fadeIn">
+              <DropdownItem
+                to="/jobs/apply"
+                icon={<MdPersonSearch size={20} />}
+                label="Apply"
+              />
+              <DropdownItem
+                to="/jobs/post"
+                icon={<MdAddCircleOutline size={20} />}
+                label="Post Job"
+              />
+            </div>
+          )}
+        </div>
+
+        <SidebarItem
           to="/notifications"
-          className="relative flex items-center gap-3 p-3 rounded-md hover:bg-zinc-800 transition"
-        >
-          <IoMdNotifications size={28} className="text-indigo-400" />
-
-          {/* Only show text when sidebar is open */}
-          {open && <p className="text-indigo-400 text-lg">Notifications</p>}
-
-          {/* Notification dot */}
-          <span className="absolute right-3 top-4">
-            <span className="relative flex h-3 w-3 mt-1">
-              <span className=" animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
-              <span className="relative inline-flex h-3 w-3 rounded-full bg-red-500"></span>
-            </span>
-          </span>
-        </NavLink>
-
-        
-        <NavLink
-          to="/settings"
-          className="flex items-center gap-3 p-3 rounded-md hover:bg-zinc-800 transition"
-        >
-          <FiSettings
-            size={28}
-            className="text-indigo-400 animate-spin-slow"
-          />
-          {open && <p className="text-indigo-400 text-lg">Settings</p>}
-        </NavLink>
+          icon={<IoMdNotifications size={24} />}
+          label="Notifications"
+          open={open}
+          hasPing
+        />
       </div>
 
-      {/* FOOTER */}
-      <div className="absolute bottom-8 left-4 flex flex-col gap-3">
-        {/* Login */}
-        <NavLink
-          to="/login"
-          className="flex items-center gap-3 p-3 rounded-md hover:bg-zinc-800 transition"
+      {/* FOOTER SETTINGS */}
+      <div className="absolute bottom-6 left-4 w-[85%]">
+        <button
+          onClick={() => setOpenFooterSettings(!openFooterSettings)}
+          className="flex items-center gap-3 p-3 rounded-lg hover:bg-zinc-800/60 transition w-full"
         >
-          <BiLogIn size={28} className="text-green-400" />
-          {open && <p className="text-green-400 text-lg">Login</p>}
-        </NavLink>
+          <FiSettings size={24} className="text-green-600" />
 
-        {/* Logout */}
-        <NavLink
-          to="/logout"
-          className="flex items-center gap-3 p-3 rounded-md hover:bg-zinc-800 transition"
-        >
-          <BiLogOut size={28} className="text-red-400" />
-          {open && <p className="text-red-400 text-lg">Logout</p>}
-        </NavLink>
+          {open && (
+            <p className="text-white font-medium flex items-center gap-2">
+              Setting
+            </p>
+          )}
+        </button>
+
+        {openFooterSettings && (
+          <div className="ml-10 mt-2 flex flex-col gap-2 animate-fadeIn">
+            {/* IF NOT LOGGED IN → SHOW LOGIN */}
+            {!isLoggedIn && (
+              <DropdownItem
+                to="/login"
+                icon={<BiLogIn size={20} />}
+                label="Login"
+              />
+            )}
+
+            {/* IF LOGGED IN → SHOW LOGOUT */}
+            {isLoggedIn && (
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-3 p-2 rounded-md hover:bg-zinc-800/60 transition w-full"
+              >
+                <span className="text-red-400">
+                  <BiLogOut size={20} />
+                </span>
+                <p className="text-red-400">Logout</p>
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
+/* COMPONENTS */
+
+const SidebarItem = ({ to, icon, label, open, hasPing }) => {
+  return (
+    <NavLink
+      to={to}
+      className="flex items-center gap-3 p-3 rounded-lg hover:bg-zinc-800/60 transition relative"
+    >
+      <span className="text-green-600">{icon}</span>
+
+      {open && <p className="text-white font-medium">{label}</p>}
+
+      {hasPing && <></>}
+    </NavLink>
+  );
+};
+
+const DropdownItem = ({ to, icon, label, red }) => {
+  return (
+    <NavLink
+      to={to}
+      className="flex items-center gap-3 p-2 rounded-md hover:bg-zinc-800/60 transition"
+    >
+      <span className={`${red ? "text-red-400" : "text-green-600"}`}>
+        {icon}
+      </span>
+      <p className={`${red ? "text-red-400" : "text-white"}`}>{label}</p>
+    </NavLink>
+  );
+};
+
 export default SideBar;
+  

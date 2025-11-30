@@ -4,6 +4,9 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const jobsData = require('./Jobs/alljobs.json');
 const jobModel = require('./Models/jobModel');
+const fs = require("fs");
+const path = require("path");
+
 
 dotenv.config();
 const app = express();
@@ -13,6 +16,8 @@ const MONGO_URI = process.env.MONGO_URI;
 
 app.use(cors());
 app.use(express.json());
+
+
 
 
 const connectDB = async () => {
@@ -35,14 +40,20 @@ const addJobs = async () => {
         console.error('Error adding jobs:', error.message || error);
     }
 }   
-
-// addJobs();
+//  addJobs();
 
 // Mount API routers
 const jobsRouter = require('./Routers/jobsRouter');
 const InterviewRouter = require('./Routers/Interview');
+const extractPdfText = require('./Routers/resumeScanner')
+const Authentication = require('./Routers/Authentication');
+const { authorizeHeader } = require('livekit-server-sdk');
+
 app.use('/api', jobsRouter);
 app.use('/api', InterviewRouter);
+app.use('/api', extractPdfText);
+app.use('/api', Authentication);
+
 
 
 // basic root
