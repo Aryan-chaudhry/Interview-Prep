@@ -9,6 +9,8 @@ import Interview from './Components/Interview/Interview.jsx';
 import ProtectedRoute from './Components/ProtectedRoute.jsx';
 import Complete from './Components/Complete.jsx';
 import Profile from './Components/Profile.jsx';
+import Join from './Components/Interview/Join.jsx';
+
 
 function App() {
   return (
@@ -16,6 +18,7 @@ function App() {
       <Sidebar />
 
       <div className='flex-1'>
+
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
@@ -72,6 +75,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <Profile/>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/join"
+            element={
+              <ProtectedRoute>
+                <Join/>
               </ProtectedRoute>
             }
           />

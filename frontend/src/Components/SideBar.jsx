@@ -35,6 +35,9 @@ const SideBar = () => {
     navigate("/login");
   };
 
+  // Hide sidebar on interview page
+  if (location.pathname === "/interview") return null;
+
   return (
     <div
       className={`fixed top-0 left-0 h-screen bg-[#0d0f12] border-r border-zinc-800 px-4 py-6 transition-all duration-300 shadow-xl z-80

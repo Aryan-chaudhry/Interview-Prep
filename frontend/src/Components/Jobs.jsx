@@ -216,16 +216,20 @@ export default function Jobs() {
 
       // Simulate a small delay for animation/user feedback
       setTimeout(() => {
-        // Redirect to /interview with all necessary data in state
-        navigate("/interview", {
-          state: {
-            jobDetails: activeJob,
-            resumeContent: resumeTextContent,
-            matchedPrimarySkills,
-            matchedSecondarySkills,
-            matchedSkillsCount,
-          },
-        });
+
+        const candidate = {
+            resume: resumeTextContent,
+            jobDescription: activeJob.jobDescription,
+            professionalJD: activeJob.professionalJD,
+            primarySkills: activeJob.primarySkills,
+            secondarySkills: activeJob.secondarySkills,
+            matchedPrimarySkills: matchedPrimarySkills,
+            matchedSecondarySkills: matchedSecondarySkills,
+            jobRole:activeJob.jobRole
+        };
+
+        navigate("/interview", { state: { Candidatedata: candidate } });
+
       }, 1500); // 1.5 second delay
     } else {
       toast.error("Match more than 3 skills to activate the interview.");

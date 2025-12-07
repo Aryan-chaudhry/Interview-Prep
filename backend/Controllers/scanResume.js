@@ -1,4 +1,5 @@
 const { PdfReader } = require("pdfreader");
+const fs = require("fs");
 
 const extractPdfText = async (req, res) => {
   try {
@@ -8,32 +9,33 @@ const extractPdfText = async (req, res) => {
 
     const filePath = req.file.path;
 
-    // Convert callback into Promise to wait for full PDF extraction
+    // Convert callback to Promise
     const extractedText = await new Promise((resolve, reject) => {
       let text = "";
 
       new PdfReader().parseFileItems(filePath, (err, item) => {
-        if (err) {
-          return reject(err);
-        }
+        if (err) return reject(err);
 
         if (!item) {
-          // PDF fully parsed -> return combined text
           return resolve(text.trim());
         }
 
         if (item.text) {
           text += item.text + " ";
-          // console.log(text); // Optional: Comment out to reduce logs
         }
       });
     });
 
-    // Send final extracted text to frontend
-    // The key here 'extractedText' matches res.data.extractedText in frontend
+    // ⛔ DELETE THE FILE AFTER EXTRACTION
+    fs.unlink(filePath, (err) => {
+      if (err) console.error("Failed to delete file:", err);
+      else console.log("PDF deleted:", filePath);
+    });
+
+    // Send extracted text
     return res.status(200).json({
       success: true,
-      extractedText, 
+      extractedText,
     });
 
   } catch (error) {
