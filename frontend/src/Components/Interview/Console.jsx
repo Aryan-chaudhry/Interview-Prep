@@ -4,7 +4,7 @@
     const Console = () => {
         const [problem, setProblem] = useState("");
       return (
-        <div className='bg-white min-h-screen'>
+        <div className='bg-white h-full'>
 
           <h1 className='text-center'>Agent Console</h1>
 

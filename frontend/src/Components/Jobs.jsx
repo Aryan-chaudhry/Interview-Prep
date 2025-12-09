@@ -1,5 +1,4 @@
-// Jobs.jsx
-// IMPORTANT: run `npm install axios react-toastify framer-motion lucide-react react-icons react-router-dom`
+// Jobs.jsx — WHITE + INDIGO PREMIUM THEME
 
 import React, { useState, useEffect } from "react";
 import { Search } from "lucide-react";
@@ -10,622 +9,400 @@ import { IoNewspaperSharp } from "react-icons/io5";
 import { MdOutlineVideoCall } from "react-icons/md";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate } from "react-router-dom";
+import Confetti from "react-confetti";
 
-// --- 1. NEW COMPONENT: Loading Animation (using bg-green-500) ---
+// Loader
 const JobsLoader = () => (
-    <div className="flex space-x-2 justify-center items-center h-48">
-        <span className="sr-only">Loading jobs...</span>
-        {/* Dot 1 */}
-        <motion.div 
-            className="h-4 w-4 bg-green-500 rounded-full"
-            animate={{ 
-                y: [0, -10, 0] 
-            }}
-            transition={{
-                duration: 0.8,
-                repeat: Infinity,
-                ease: "easeInOut",
-            }}
-        />
-        {/* Dot 2 */}
-        <motion.div 
-            className="h-4 w-4 bg-green-500 rounded-full"
-            animate={{ 
-                y: [0, -10, 0] 
-            }}
-            transition={{
-                duration: 0.8,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: 0.2, // Staggered delay
-            }}
-        />
-        {/* Dot 3 */}
-        <motion.div 
-            className="h-4 w-4 bg-green-500 rounded-full"
-            animate={{ 
-                y: [0, -10, 0] 
-            }}
-            transition={{
-                duration: 0.8,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: 0.4, // Staggered delay
-            }}
-        />
-    </div>
+  <div className="flex space-x-2 justify-center items-center h-48">
+    <motion.div className="h-4 w-4 bg-indigo-500 rounded-full" animate={{ y: [0, -10, 0] }} transition={{ duration: 0.8, repeat: Infinity }} />
+    <motion.div className="h-4 w-4 bg-indigo-500 rounded-full" animate={{ y: [0, -10, 0] }} transition={{ duration: 0.8, repeat: Infinity, delay: 0.2 }} />
+    <motion.div className="h-4 w-4 bg-indigo-500 rounded-full" animate={{ y: [0, -10, 0] }} transition={{ duration: 0.8, repeat: Infinity, delay: 0.4 }} />
+  </div>
 );
-// -----------------------------------------------------------------
-
 
 export default function Jobs() {
-  const navigate = useNavigate();
-  const now = new Date();
-  const formatted = now.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-  });
+  const navigate = useNavigate();
+  const now = new Date();
+  const formatted = now.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
 
-  const [search, setSearch] = useState("");
-  const [jobs, setJobs] = useState([]);
-  const [activeJob, setActiveJob] = useState(null);
-  const [activeTab, setActiveTab] = useState("application");
-  const [resumeFile, setResumeFile] = useState(null);
-  const [scanningProgress, setScanningProgress] = useState(0);
-  const [matchedSkillsCount, setMatchedSkillsCount] = useState(0);
-  const [matchedPrimarySkills, setMatchedPrimarySkills] = useState([]);
-  const [matchedSecondarySkills, setMatchedSecondarySkills] = useState([]);
-  const [interviewStatus, setInterviewStatus] = useState("pending"); 
-  const [resumeTextContent, setResumeTextContent] = useState(""); 
-  
-  // --- 2. NEW STATE: Loading Status ---
-  const [isLoading, setIsLoading] = useState(true); 
+  const [search, setSearch] = useState("");
+  const [jobs, setJobs] = useState([]);
+  const [activeJob, setActiveJob] = useState(null);
+  const [activeTab, setActiveTab] = useState("application");
 
-  useEffect(() => {
-    // --- 3. Set loading state to TRUE before fetch ---
-    setIsLoading(true); 
-    axios
-      .get("http://localhost:8080/api/jobs")
-      .then((res) => {
-        setJobs(res.data || []);
-        // --- 4. Set loading state to FALSE on success ---
-        setIsLoading(false); 
-      })
-      .catch(() => {
-        toast.error("Failed to load jobs");
-        // --- 5. Set loading state to FALSE on failure ---
-        setIsLoading(false); 
-      });
-  }, []);
-  
-  useEffect(() => {
-    if (activeJob) {
-      setInterviewStatus("pending");
-      setMatchedSkillsCount(0);
-      setResumeFile(null);
-      setScanningProgress(0);
-      setResumeTextContent("");
-    }
-  }, [activeJob]);
+  const [resumeFile, setResumeFile] = useState(null);
+  const [scanningProgress, setScanningProgress] = useState(0);
+  const [matchedSkillsCount, setMatchedSkillsCount] = useState(0);
+  const [matchedPrimarySkills, setMatchedPrimarySkills] = useState([]);
+  const [matchedSecondarySkills, setMatchedSecondarySkills] = useState([]);
+  const [interviewStatus, setInterviewStatus] = useState("pending");
+  const [resumeTextContent, setResumeTextContent] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
 
+  const [showConfetti, setShowConfetti] = useState(false);
 
-  // --------------- extractTextAndMatchSkills (Backend PDF Extraction) ---------------
-  const extractTextAndMatchSkills = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return toast.error("Please select a PDF file");
+  useEffect(() => {
+    setIsLoading(true);
+    axios.get("http://localhost:8080/api/jobs")
+      .then(res => { setJobs(res.data || []); setIsLoading(false); })
+      .catch(() => { toast.error("Failed to load jobs"); setIsLoading(false); });
+  }, []);
 
-    setResumeFile(file);
-    setScanningProgress(0);
-    setMatchedPrimarySkills([]);
-    setMatchedSecondarySkills([]);
-    setMatchedSkillsCount(0);
-    setInterviewStatus("pending"); 
+  useEffect(() => {
+    if (activeJob) {
+      setInterviewStatus("pending");
+      setMatchedSkillsCount(0);
+      setResumeFile(null);
+      setScanningProgress(0);
+      setResumeTextContent("");
+    }
+  }, [activeJob]);
 
-    let progress = 0;
-    const fakeProgress = setInterval(() => {
-      progress += 4;
-      if (progress >= 95) {
-        clearInterval(fakeProgress);
-      }
-      setScanningProgress(progress);
-    }, 150);
+  // Extract + Matching
+  const extractTextAndMatchSkills = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return toast.error("Please select a PDF file");
 
-    try {
-      const formData = new FormData();
-      formData.append("pdf", file);
+    setResumeFile(file);
+    setScanningProgress(0);
+    setMatchedPrimarySkills([]);
+    setMatchedSecondarySkills([]);
+    setMatchedSkillsCount(0);
+    setInterviewStatus("pending");
 
-      const res = await axios.post(
-        "http://localhost:8080/api/extractpdf",
-        formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
-      );
+    let progress = 0;
+    const fakeProgress = setInterval(() => {
+      progress += 4;
+      if (progress >= 95) clearInterval(fakeProgress);
+      setScanningProgress(progress);
+    }, 150);
 
-      clearInterval(fakeProgress);
-      setScanningProgress(100);
+    try {
+      const formData = new FormData();
+      formData.append("pdf", file);
 
-      const text = res.data.extractedText || "";
-      setResumeTextContent(text); 
+      const res = await axios.post("http://localhost:8080/api/extractpdf", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
 
-      if (!activeJob) return;
+      clearInterval(fakeProgress);
+      setScanningProgress(100);
 
-      const resumeText = text
-        .toLowerCase()
-        .replace(/[\r\n]+/g, " ")
-        .replace(/[^a-z0-9.+# ]/gi, " ")
-        .replace(/\s+/g, " ");
+      const text = res.data.extractedText || "";
+      setResumeTextContent(text);
 
-      const matchSkill = (skill) => {
-        if (!skill) return false;
+      if (!activeJob) return;
 
-        const s = skill.toLowerCase().trim();
-        const variations = [
-          s,
-          s.replace(/\s+/g, ""),
-          s.replace(/\s+/g, "-"),
-          s.replace(/\s+/g, "."),
-          s.replace(/\s+/g, "_"),
-          s.replace(/js$/, " js"),
-        ];
+      const resumeText = text.toLowerCase().replace(/[\r\n]+/g, " ")
+        .replace(/[^a-z0-9.+# ]/gi, " ").replace(/\s+/g, " ");
 
-        return variations.some((v) => {
-          try {
-            const escaped = v.replace(
-              /[-[\]{}()*+?.,\\^$|#\s]/g,
-              "\\$&"
-            );
-            const regex = new RegExp(`\\b${escaped}\\b`, "i");
-            return regex.test(resumeText);
-          } catch {
-            return false;
-          }
-        });
-      };
+      const matchSkill = (skill) => {
+        if (!skill) return false;
+        const s = skill.toLowerCase().trim();
+        const variations = [s, s.replace(/\s+/g, ""), s.replace(/\s+/g, "-")];
+        return variations.some(v => {
+          try {
+            const escaped = v.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+            const regex = new RegExp(`\\b${escaped}\\b`, "i");
+            return regex.test(resumeText);
+          } catch { return false; }
+        });
+      };
 
-      const p = activeJob.primarySkills?.filter(matchSkill) || [];
-      const s = activeJob.secondarySkills?.filter(matchSkill) || [];
+      const p = activeJob.primarySkills?.filter(matchSkill) || [];
+      const s = activeJob.secondarySkills?.filter(matchSkill) || [];
 
-      const totalMatched = p.length + s.length;
-      setMatchedPrimarySkills(p);
-      setMatchedSecondarySkills(s);
-      setMatchedSkillsCount(totalMatched);
+      const totalMatched = p.length + s.length;
+      setMatchedPrimarySkills(p);
+      setMatchedSecondarySkills(s);
+      setMatchedSkillsCount(totalMatched);
 
-      // --- LOGIC: Check for readiness ( > 3 skills) ---
-      if (totalMatched > 3) {
-        setInterviewStatus("ready");
-        toast.success(`Matched ${totalMatched} skills! Interview is ready.`);
-      } else {
-        setInterviewStatus("pending");
-        toast.warn(`Your Resume is not good for this Job. Only matched ${totalMatched} skills. Please update your resume.`);
-      }
+      if (totalMatched > 3) {
+        setInterviewStatus("ready");
+        toast.success(`Matched ${totalMatched} skills! Interview ready.`);
+      } else {
+        toast.warn(`Only ${totalMatched} skills matched. Improve resume.`);
+      }
 
-    } catch (err) {
-      console.error(err);
-      clearInterval(fakeProgress);
-      toast.error("Failed to extract text from PDF");
-      setScanningProgress(0);
-      setInterviewStatus("pending");
-    }
-  };
+    } catch (err) {
+      toast.error("Failed to extract text");
+      clearInterval(fakeProgress);
+      setScanningProgress(0);
+      setInterviewStatus("pending");
+    }
+  };
 
-  // --------------- Handle Activation and Redirection ---------------
-  const handleActivateInterview = () => {
-    if (matchedSkillsCount > 3) {
-      setInterviewStatus("activated");
-      toast.success("Interview activated! Redirecting...");
-
-      // Simulate a small delay for animation/user feedback
-      setTimeout(() => {
-
+  const handleActivateInterview = () => {
+    if (matchedSkillsCount > 3) {
+      setInterviewStatus("activated");
+      toast.success("Interview Activated!");
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 10000);
+      setTimeout(() => {
         const candidate = {
-            resume: resumeTextContent,
-            jobDescription: activeJob.jobDescription,
-            professionalJD: activeJob.professionalJD,
-            primarySkills: activeJob.primarySkills,
-            secondarySkills: activeJob.secondarySkills,
-            matchedPrimarySkills: matchedPrimarySkills,
-            matchedSecondarySkills: matchedSecondarySkills,
-            jobRole:activeJob.jobRole
+          resume: resumeTextContent,
+          jobDescription: activeJob.jobDescription,
+          professionalJD: activeJob.professionalJD,
+          primarySkills: activeJob.primarySkills,
+          secondarySkills: activeJob.secondarySkills,
+          matchedPrimarySkills,
+          matchedSecondarySkills,
+          jobRole: activeJob.jobRole,
         };
-
         navigate("/interview", { state: { Candidatedata: candidate } });
+      }, 5000);
+    } else {
+      toast.error("Match more than 3 skills to activate interview.");
+    }
+  };
 
-      }, 1500); // 1.5 second delay
-    } else {
-      toast.error("Match more than 3 skills to activate the interview.");
-    }
-  };
-  // -----------------------------------------------------------------------------
+  const filtered = jobs.filter((job) => {
+    const t = search.toLowerCase();
+    return (
+      job.jobTitle?.toLowerCase().includes(t) ||
+      job.jobRole?.toLowerCase().includes(t) ||
+      job.location?.toLowerCase().includes(t)
+    );
+  });
 
-  const filtered = jobs.filter((job) => {
-    const t = search.toLowerCase();
-    return (
-      job.jobTitle?.toLowerCase().includes(t) ||
-      job.jobRole?.toLowerCase().includes(t) ||
-      job.location?.toLowerCase().includes(t)
-    );
-  });
+  const tabs = [
+    { id: "application", label: "Job Application", icon: <IoNewspaperSharp size={18} /> },
+    { id: "resume", label: "Resume", icon: <FaRegFileAlt size={18} /> },
+    { id: "interview", label: "Interview", icon: <MdOutlineVideoCall size={18} /> },
+  ];
 
-  // Helper function to determine ping class
-  const getPingClasses = (status) => {
-    if (status === "activated") {
-      return "bg-green-500 opacity-75"; // Activated/Live
-    }
-    if (status === "ready") {
-      return "bg-yellow-500 opacity-75"; // Ready to Activate
-    }
-    return "bg-red-500 opacity-75"; // Pending/Default
-  };
+  return (
+    <div className="min-h-screen w-full bg-gray-50 text-gray-900 px-25 py-20">
 
-  // Helper function to determine inner dot class
-  const getDotClasses = (status) => {
-    if (status === "activated") {
-      return "bg-green-500";
-    }
-    if (status === "ready") {
-      return "bg-yellow-500";
-    }
-    return "bg-red-500";
-  };
-  
-  // Helper function to determine status text
-  const getStatusText = (status) => {
-    if (status === "activated") return "Live";
-    if (status === "ready") return "Ready";
-    return "Pending";
-  };
+      {showConfetti && (
+        <div className="fixed inset-0 z-[9999] pointer-events-none">
+          <Confetti width={window.innerWidth} height={window.innerHeight} />
+        </div>
+      )}
 
+      <ToastContainer />
 
-  const tabs = [
-    {
-      id: "application",
-      label: "Job Application",
-      icon: <IoNewspaperSharp size={18} />,
-    },
-    { id: "resume", label: "Resume", icon: <FaRegFileAlt size={18} /> },
-    {
-      id: "interview",
-      label: "Interview",
-      icon: <MdOutlineVideoCall size={18} />,
-    },
-  ];
+      <motion.h1 initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
+        className="text-4xl font-bold text-center mb-10 text-indigo-600">
+        Explore Premium Jobs
+      </motion.h1>
 
-  return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-zinc-900 via-zinc-950 to-black text-white px-25 py-20">
-      <ToastContainer />
+      {/* Search */}
+      <div className="flex justify-center mb-10">
+        <div className="relative w-full max-w-xl">
+          <Search className="absolute left-3 top-3 text-gray-400" />
+          <input
+            type="text"
+            className="w-full bg-white border border-gray-300 rounded-xl pl-12 pr-4 py-3 focus:border-indigo-500 outline-none"
+            placeholder="Search job title, role, or location..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+      </div>
 
-      <motion.h1
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-4xl font-bold text-center mb-10"
-      >
-        Explore Premium Jobs
-      </motion.h1>
-
-      {/* Search */}
-      <div className="flex justify-center mb-10">
-        <div className="relative w-full max-w-xl">
-          <Search className="absolute left-3 top-3 opacity-50" />
-          <input
-            type="text"
-            className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-3 focus:border-green-400 outline-none backdrop-blur-md"
-            placeholder="Search job title, role, or location..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-      </div>
-
-    {/* --- 6. CONDITIONAL RENDERING --- */}
-    {isLoading ? (
+      {/* Jobs Grid */}
+      {isLoading ? (
         <JobsLoader />
-    ) : (
-        <>
-            {/* Job Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {filtered.map((job, index) => (
-                    <motion.div
-                        key={index}
-                        onClick={() => setActiveJob(job)}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        className="bg-black/40 border border-white/10 rounded-2xl p-6 backdrop-blur-xl hover:border-green-400 transition-all duration-300 shadow-xl cursor-pointer"
-                    >
-                        <div className="flex items-center gap-4 mb-4">
-                            <img
-                                src={job.profilePhoto}
-                                alt="profile"
-                                className="w-12 h-12 rounded-full object-cover border border-white/10"
-                            />
-                            <div>
-                                <p className="text-lg font-semibold">{job.posterName}</p>
-                                <p className="text-xs opacity-60">{job.gender}</p>
-                            </div>
-                        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {filtered.map((job, index) => (
+            <motion.div
+              key={index}
+              onClick={() => setActiveJob(job)}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05 }}
+              className="bg-white border border-gray-200 rounded-2xl p-6 shadow-md hover:shadow-xl hover:border-indigo-500 transition-all cursor-pointer"
+            >
+              <div className="flex items-center gap-4 mb-4">
+                <img src={job.profilePhoto} className="w-12 h-12 rounded-full" />
+                <div>
+                  <p className="font-semibold">{job.posterName}</p>
+                  <p className="text-xs text-gray-500">{job.gender}</p>
+                </div>
+              </div>
 
-                        <h2 className="text-xl font-bold mb-2 text-green-400">
-                            {job.jobTitle}
-                        </h2>
-                        <p className="opacity-80 text-sm mb-2">Role: {job.jobRole}</p>
-                        <p className="opacity-60 text-sm mb-2">Location: {job.location}</p>
-                        <p className="opacity-60 text-sm mb-2">Posted: {job.postedTime}</p>
+              <h2 className="text-xl font-bold text-indigo-600">{job.jobTitle}</h2>
+              <p className="text-gray-600 text-sm">Role: {job.jobRole}</p>
+              <p className="text-gray-500 text-sm">Location: {job.location}</p>
 
-                        <p className="opacity-80 text-sm mt-4 line-clamp-3">
-                            {job.jobDescription}
-                        </p>
+              <div className="mt-6 flex justify-between items-center">
+                <span className="text-sm text-gray-600">{job.workType}</span>
 
-                        <div className="mt-6 flex justify-between items-center">
-                            <span className="text-sm opacity-80">{job.workType}</span>
-                            <div className="flex gap-2 hover:bg-zinc-700 rounded-full pl-2 pr-2 py-1">
-                                <FaRegStar className="text-yellow-500 mt-1" />
-                                <span className="text-yellow-400">{job.rating}</span>
-                            </div>
-                        </div>
-                    </motion.div>
-                ))}
+                <div className="flex gap-2 bg-gray-100 rounded-full px-3 py-1">
+                  <FaRegStar className="text-indigo-500 mt-1" />
+                  <span className="text-indigo-600">{job.rating}</span>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
+
+      {/* Drawer */}
+      {activeJob && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex justify-end z-50">
+          <div className="w-full max-w-5xl h-full bg-white overflow-y-auto p-8 border-l border-gray-200">
+
+            {/* Close Button */}
+            <div className="flex justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <img
+                  src={activeJob.profilePhoto}
+                  className="w-16 h-16 rounded-full"
+                />
+                <div>
+                  <h2 className="text-2xl font-bold">{activeJob.posterName}</h2>
+                  <p className="text-gray-500">{activeJob.jobRole}</p>
+                </div>
+              </div>
+
+              <button onClick={() => setActiveJob(null)}
+                className="px-4 h-10  text-white rounded-xl hover:bg-gray-200 hover:cursor-pointer">
+                <h1 className="text-gray-400 text-2xl">x</h1>
+              </button>
             </div>
-        </>
-    )}
-    {/* ----------------------------------- */}
 
+            {/* Tabs */}
+            <div className="flex gap-4 mb-6 border-b pb-3 border-gray-200">
+              {tabs.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setActiveTab(t.id)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg 
+                    ${activeTab === t.id ? "bg-indigo-500 text-white" : "bg-gray-100 text-gray-700"}`}
+                >
+                  {t.icon}
+                  {t.label}
+                </button>
+              ))}
+            </div>
 
-      {/* Drawer (Rendered conditionally as before) */}
-      {activeJob && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-end z-50">
-          <div className="w-full max-w-5xl h-full bg-black/80 border-l border-white/10 overflow-y-auto p-8">
-            {/* Top */}
-            <div className="flex justify-between items-center mb-6">
-              <div className="flex items-center gap-4">
-                <img
-                  src={activeJob.profilePhoto}
-                  alt="profile"
-                  className="w-16 h-16 rounded-full border border-white/10"
-                />
-                <div>
-                  <div className="flex justify-center gap-5">
-                    <h2 className="text-2xl font-bold mt-1">
-                      {activeJob.posterName}
-                    </h2>
+            {/* === Application Tab === */}
+            {activeTab === "application" && (
+              <div className="space-y-6">
+                <div className="bg-gray-200 p-5 rounded-xl ">
+                  <h3 className="font-semibold mb-2 text-lg">Job Description</h3>
+                  <p className="text-gray-600 text-sm">{activeJob.jobDescription}</p>
+                </div>
 
-                    <div className="flex gap-2 mt-2 border border-yellow-500 w-32 justify-center rounded-full">
-                      <FaRegStar className="text-yellow-500 mt-1" size={17} />
-                      <p className="text-yellow-500">{activeJob.rating}</p>
-                      <p>Overall</p>
-                    </div>
+                <div className="bg-gray-200 p-5 rounded-xl ">
+                  <h3 className="font-semibold mb-2 text-lg">Professional Description</h3>
+                  <p className="text-gray-600 text-sm">{activeJob.professionalJD}</p>
+                </div>
+              </div>
+            )}
 
-                    <div className="flex gap-2 mt-2 border border-green-500 w-32 justify-center rounded-full">
-                        <span className="pt-1">
-                            <span className="relative flex h-3 w-3 mt-1">
-                            {/* Green ping */}
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500"></span>
+            {/* === Resume Tab === */}
+            {activeTab === "resume" && (
+              <div className="bg-gray-200 p-6 rounded-xl flex flex-col gap-4">
+                <h3 className="text-lg font-semibold text-gray-800">Upload Resume</h3>
 
-                            {/* Green dot */}
-                            <span className="relative inline-flex mt-[2px] ml-[2px] h-2 w-2 rounded-full bg-green-500"></span>
-                            </span>
-                        </span>
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  onChange={extractTextAndMatchSkills}
+                  className="file:bg-indigo-500 file:text-white file:px-4 file:py-2 file:rounded-lg"
+                />
 
-                        {/* Active Text */}
-                        <p className="font-medium">Active</p>
-                    </div>
+                {resumeFile && <p className="text-gray-600">{resumeFile.name}</p>}
 
+                {resumeFile && (
+                  <div className="w-full bg-gray-200 h-4 rounded-full">
+                    <div
+                      className="bg-indigo-500 h-4 rounded-full"
+                      style={{ width: `${scanningProgress}%` }}
+                    />
+                  </div>
+                )}
 
-                  </div>
-                  <p>
-                    <span className="text-gray-500 px-3">Posted for</span>
-                    {activeJob.jobRole}
-                  </p>
-                </div>
-              </div>
+                {scanningProgress === 100 && (
+                  <div className="text-indigo-600">
+                    Matched Skills: {matchedSkillsCount}
+                  </div>
+                )}
+              </div>
+            )}
 
-              <button
-                onClick={() => setActiveJob(null)}
-                className="px-4 py-2 bg-red-500 rounded-xl hover:bg-red-600"
-              >
-                Close
-              </button>
-            </div>
+            {/* === Interview Tab === */}
+            {activeTab === "interview" && (
+              <div className="bg-gray-200 p-5 rounded-xl">
 
-            {/* Tabs */}
-            <div className="flex gap-4 mb-6 border-b border-white/10 pb-3">
-              {tabs.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => setActiveTab(t.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
-                    activeTab === t.id
-                      ? "bg-green-500 text-black"
-                      : "bg-white/10"
-                  }`}
-                >
-                  {t.icon}
-                  {t.label}
-                </button>
-              ))}
-            </div>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="text-gray-600">Technical Interview</p>
+                    <p className="text-gray-500 text-sm">CareerPilot</p>
+                  </div>
 
-            {/* Tab: Application */}
-            {activeTab === "application" && (
-              <div className="space-y-6">
-                <div className="bg-white/5 p-5 rounded-xl border border-white/10">
-                  <h3 className="text-xl font-semibold mb-2">Job Description</h3>
-                  <p className="opacity-70 text-sm">
-                    {activeJob.jobDescription}
-                  </p>
-                </div>
+                  <button
+                    onClick={handleActivateInterview}
+                    disabled={interviewStatus !== "ready" && interviewStatus !== "activated"}
+                    className={`px-5 py-2 rounded-md border transition 
+                      ${interviewStatus === "ready" || interviewStatus === "activated"
+                        ? "border-indigo-500 text-indigo-500 hover:bg-indigo-500 hover:text-white"
+                        : "border-gray-400 text-gray-400 cursor-not-allowed"}`}
+                  >
+                    {interviewStatus === "activated" ? "Interview Live" : "Activate Interview"}
+                  </button>
+                </div>
 
-                <div className="bg-white/5 p-5 rounded-xl border border-white/10">
-                  <h3 className="text-xl font-semibold mb-2">
-                    Professional Description
-                  </h3>
-                  <p className="opacity-70 text-sm">
-                    {activeJob.professionalJD}
-                  </p>
-                  </div>
-              </div>
-            )}
+              </div>
+            )}
 
-            {/* Tab: Resume */}
-            {activeTab === "resume" && (
-              <div className="bg-white/5 p-6 rounded-xl border border-white/10 flex flex-col gap-4">
-                <div>
-                  <h3 className="text-xl font-semibold mb-4">Upload Resume</h3>
-                  <input
-                    type="file"
-                    accept="application/pdf"
-                    onChange={extractTextAndMatchSkills}
-                    className="file:bg-green-500 file:text-black file:px-4 file:py-2 file:rounded-lg file:cursor-pointer"
-                  />
+            {/* Right Info */}
+            <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                  {resumeFile && (
-                    <p className="mt-3 opacity-70">Selected: {resumeFile.name}</p>
-                  )}
+              <div className="bg-gray-200 p-5 rounded-xl">
+                <h3 className="font-semibold mb-3">Personal Information</h3>
+                <p className="text-gray-600 text-sm">Gender: {activeJob.gender}</p>
+                <p className="text-gray-600 text-sm mt-2">Email: {activeJob.email}</p>
+                <p className="text-gray-600 text-sm mt-2">Location: {activeJob.location}</p>
+              </div>
 
-                  {resumeFile && (
-                    <div className="w-full bg-white/20 h-4 rounded-full mt-4">
-                      <div
-                        className="bg-green-500 h-4 rounded-full transition-all"
-                        style={{ width: `${scanningProgress}%` }}
-                      />
-                    </div>
-                  )}
+              <div className="bg-gray-200 p-5 rounded-xl ">
+                <h3 className="font-semibold mb-3">Skills</h3>
 
-                  {scanningProgress === 100 && (
-                    <p className="mt-2 text-green-400">
-                      Matched Skills: {matchedSkillsCount}
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
+                <p className="font-semibold text-sm">Primary Skills:</p>
+                <div className="flex flex-wrap gap-2 my-2">
+                  {activeJob.primarySkills?.map((s, i) => (
+                    <span
+                      key={i}
+                      className={`px-3 py-1 text-xs rounded-full border 
+                        ${matchedPrimarySkills.includes(s)
+                          ? "bg-indigo-500 text-white border-indigo-500"
+                          : "bg-gray-100 text-gray-600 border-gray-300"
+                        }`}
+                    >
+                      {s}
+                    </span>
+                  ))}
+                </div>
 
-            {/* Tab: Interview */}
-            {activeTab === "interview" && (
-              <div className="space-y-6">
-                <div className="bg-white/5 p-5 rounded-xl border border-white/10">
-                  <div className="flex gap-3">
-                    <div className="w-16 h-16 rounded-md bg-white/5 p-5 border border-white/10 flex justify-center items-center">
-                      {formatted}
-                    </div>
-                    <div>
-                      <h1>Technical Interview</h1>
-                      <p className="text-gray-400">
-                        Interview with <i>CareerPilot</i>
-                      </p>
-                    </div>
-                  </div>
+                <p className="font-semibold text-sm mt-2">Secondary Skills:</p>
+                <div className="flex flex-wrap gap-2 my-2">
+                  {activeJob.secondarySkills?.map((s, i) => (
+                    <span
+                      key={i}
+                      className={`px-3 py-1 text-xs rounded-full border 
+                        ${matchedSecondarySkills.includes(s)
+                          ? "bg-indigo-500 text-white border-indigo-500"
+                          : "bg-gray-100 text-gray-600 border-gray-300"
+                        }`}
+                    >
+                      {s}
+                    </span>
+                  ))}
+                </div>
 
-                  <hr className="mt-5 text-gray-400" />
+              </div>
+            </div>
 
-                  <div className="flex justify-between pt-5">
-                    <div className="flex gap-10">
-                      <div>
-                        <p className="text-gray-500">Location</p>
-                        <h1>Online</h1>
-                      </div>
+          </div>
+        </div>
+      )}
 
-                      <div>
-                        <p className="text-gray-500">Status</p>
-                        <h1 className="flex gap-2">
-                          <span className="pt-1">
-                            <span className="relative flex h-3 w-3 mt-1">
-                              {/* Animate Ping Class based on status */}
-                              <span 
-                                className={`animate-ping absolute inline-flex h-full w-full rounded-full ${getPingClasses(interviewStatus)}`}
-                              ></span>
-                              {/* Inner Dot Class based on status */}
-                              <span 
-                                className={`relative inline-flex mt-[2px] ml-[2px] h-2 w-2 rounded-full ${getDotClasses(interviewStatus)}`}
-                              ></span>
-                            </span>
-                          </span>
-                          {getStatusText(interviewStatus)}
-                        </h1>
-                      </div>
-
-                      <div>
-                        <p className="text-gray-500">Created By</p>
-                        <h1>Agent</h1>
-                      </div>
-                    </div>
-
-                    <div>
-                      {/* --- UPDATED: Activate Interview Button --- */}
-                      <button 
-                        onClick={handleActivateInterview}
-                        disabled={interviewStatus !== "ready" && interviewStatus !== "activated"}
-                        className={`px-5 h-10 border rounded-md transition duration-200 
-                          ${
-                            interviewStatus === "ready" || interviewStatus === "activated"
-                              ? "border-green-500 text-green-500 hover:bg-green-600 hover:text-white"
-                              : "border-gray-500 text-gray-500 cursor-not-allowed opacity-50"
-                          }
-                        `}
-                      >
-                        {interviewStatus === "activated" ? "Interview Live" : "Activate Interview"}
-                      </button>
-                      {/* ------------------------------------------- */}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Right Section */}
-            <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white/5 p-5 rounded-xl border border-white/10">
-                <h3 className="text-lg font-semibold mb-3">
-                  Personal Information
-                </h3>
-                <p className="opacity-70 text-sm">Gender: {activeJob.gender}</p>
-                <p className="opacity-70 text-sm mt-2">
-                  Email: {activeJob.email}
-                </p>
-                <p className="opacity-70 text-sm mt-2">
-                  Location: {activeJob.location}
-                </p>
-              </div>
-
-              {/* Skills */}
-              <div className="bg-white/5 p-5 rounded-xl border border-white/10">
-                <h3 className="text-lg font-semibold mb-3">Skills</h3>
-
-                <p className="text-sm font-semibold">Primary Skills:</p>
-                <div className="flex flex-wrap gap-2 my-2">
-                  {activeJob.primarySkills?.map((s, i) => (
-                    <span
-                      key={i}
-                      className={`px-3 py-1 border text-xs rounded-full ${
-                        matchedPrimarySkills.includes(s)
-                          ? "bg-green-500/70 border-green-500/80"
-                          : "bg-green-500/20 border-green-500/30"
-                      }`}
-                    >
-                      {s}
-                    </span>
-                  ))}
-                </div>
-
-                <p className="text-sm font-semibold mt-3">Secondary Skills:</p>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {activeJob.secondarySkills?.map((s, i) => (
-                    <span
-                      key={i}
-                      className={`px-3 py-1 border text-xs rounded-full ${
-                        matchedSecondarySkills.includes(s)
-                          ? "bg-green-500/70 border-green-500/80"
-                          : "bg-white/10 border-white/20"
-                      }`}
-                    >
-                      {s}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+    </div>
+  );
 }

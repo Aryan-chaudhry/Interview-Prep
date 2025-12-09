@@ -82,7 +82,7 @@ const Code = () => {
         <div className="flex-1 overflow-hidden">
           <Editor
             height="100%"
-            theme="vs-dark"
+            theme="vs-white"
             language={language}
             value={code}
             onChange={(value) => setCode(value || "")}

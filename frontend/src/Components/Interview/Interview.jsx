@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import SpeechRecognition, { useSpeechRecognition } from "react-speech-recognition";
-import { useLocation } from "react-router-dom";
-import { FaMicrophone } from "react-icons/fa6";
-import { FaMicrophoneSlash } from "react-icons/fa";
+import { useLocation, useNavigate } from "react-router-dom";
+import axios from 'axios';
+
+import { FaMicrophone, FaMicrophoneSlash, FaVideo, FaVideoSlash } from "react-icons/fa";
 import { IoCallOutline, IoChatbubbleEllipsesOutline } from "react-icons/io5";
 import { AiOutlineSecurityScan } from "react-icons/ai";
 import { CiDesktop } from "react-icons/ci";
@@ -10,315 +11,259 @@ import { VscVscode } from "react-icons/vsc";
 import { HiOutlineHandRaised } from "react-icons/hi2";
 import { BsEmojiSmile } from "react-icons/bs";
 import { GoPeople } from "react-icons/go";
-import axios from "axios";
-import { useNavigate } from "react-router-dom";
-import Chat from './Chat';
-import People from './People';
-import Join from './Join';
-import Code from './Code';
+
+import Chat from "./Chat";
+import People from "./Chat"; 
+import Join from "./Join";
+import Code from "./Code";
 import Console from "./Console";
-import Reaction from './Reaction';
-import joinSoundFile from '../../assets/JoinCall.mp3';
-import hangupSoundFile from '../../assets/Hangup.mp3';
+import Reaction from "./Reaction";
+import Webcam from "react-webcam";
+
+import joinSoundFile from "../../assets/JoinCall.mp3";
+import hangupSoundFile from "../../assets/Hangup.mp3";
 
 const Interview = () => {
-  const navigate = useNavigate();
   const location = useLocation();
-  const [candidate, setCandidate] = useState(null);
-
-  const [mute, setMute] = useState(true);
-  const [aiSpeaking, setAiSpeaking] = useState(false);
-  const [youSpeaking, setYouSpeaking] = useState(false);
-  const [activePanel, setActivePanel] = useState('chat');
-  const [currentTime, setCurrentTime] = useState(new Date());
-  const [handRaised, setHandRaised] = useState(false);
-  const [agentJoined, setAgentJoined] = useState(false);
-  const [meetingStartTime, setMeetingStartTime] = useState(null);
-
-  const {
-    transcript,
-    listening,
-    resetTranscript
+  const navigate = useNavigate();
+  const webcamRef = useRef(null);
+  
+ 
+  const { 
+    transcript, 
+    listening, 
+    browserSupportsSpeechRecognition, 
+    resetTranscript 
   } = useSpeechRecognition();
 
+  // State Management
+  const [candidate, setCandidate] = useState([]);
+  const [mute, setMute] = useState(true); // Default to muted on join
+  const [cam, setCam] = useState(false); // Default to camera off on join
+  const [handRaised, setHandRaised] = useState(false); 
+  const [activePanel, setActivePanel] = useState('chat');
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Component Mount Setup
   useEffect(() => {
-    setCandidate(location?.state?.Candidatedata);
+    const candidateData = location?.state?.Candidatedata || [];
+    setCandidate(candidateData);
+
+    // Update time every second
+    const timerId = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timerId); // Cleanup timer
   }, [location]);
 
-  // Update time every second
+  
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  // Agent joins after 0-30 seconds randomly
-  useEffect(() => {
-    const randomDelay = Math.random() * 30000; // 0-30 seconds in milliseconds
-    const timer = setTimeout(() => {
-      setAgentJoined(true);
-      setMeetingStartTime(new Date()); // Start timer when agent joins
-        // Play join sound from bundled src/assets
-        setTimeout(() => {
-          const joinSound = new Audio(joinSoundFile);
-          joinSound.volume = 1; // Full volume (0-1 scale)
-          joinSound.muted = false; // Ensure not muted
-          joinSound.play()
-            .then(() => console.log('✓ Join sound playing (from src/assets)'))
-            .catch(err => console.error('✗ Join sound error (from src/assets):', err));
-        }, 100);
-    }, randomDelay);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Detect if YOU are speaking
-  useEffect(() => {
-    if (listening && transcript.trim() !== "") {
-      setYouSpeaking(true);
+    
+    if (!mute) {
+        SpeechRecognition.startListening({ continuous: true });
     } else {
-      setYouSpeaking(false);
+        SpeechRecognition.stopListening();
     }
-  }, [listening, transcript]);
+  }, [mute]); 
 
-  if (!candidate) {
-    return (
-      <div className="min-h-screen text-zinc-950 flex justify-center items-center pt-[50px]">
-        <h1 className="text-5xl text-green-500">No interview Schedule</h1>
-      </div>
-    );
-  }
-
-  // ------------------ FIXED MIC FUNCTION ------------------
-  const handleMic = async () => {
-    const micState = !mute;
-    setMute(micState);
-
-    if (!micState) {
-      resetTranscript();
-      await SpeechRecognition.startListening({
-        continuous: true,
-        language: "en-IN",
-      });
-      return;
-    }
-
-    await SpeechRecognition.stopListening();
-
-    if (!transcript.trim()) return;
-
-    try {
-      const response = await axios.get("http://localhost:8080/api/communicate", {
-        params: { message: transcript, ...candidate }
-      });
-
-      const { audio } = response.data;
-
-      resetTranscript();
-      setAiSpeaking(true);
-
-      const audioBlob = new Blob(
-        [Uint8Array.from(atob(audio), c => c.charCodeAt(0))],
-        { type: "audio/mp3" }
-      );
-
-      const audioUrl = URL.createObjectURL(audioBlob);
-      const player = new Audio(audioUrl);
-
-      player.onended = () => setAiSpeaking(false);
-      player.play();
-    } catch (err) {
-      console.log("AI communication error:", err);
-    }
+  
+  const handleWebCam = () => {
+    setCam((prev) => !prev);
   };
 
-  const hour = currentTime.getHours();
-  const mins = currentTime.getMinutes();
-  const secs = currentTime.getSeconds();
+  const handleMic = () => {
+    setMute((prev) => !prev);
+  };
 
-  // Calculate elapsed time since meeting started
-  const elapsedTime = meetingStartTime ? Math.floor((currentTime - meetingStartTime) / 1000) : 0;
-  const elapsedHours = Math.floor(elapsedTime / 3600);
-  const elapsedMins = Math.floor((elapsedTime % 3600) / 60);
-  const elapsedSecs = elapsedTime % 60;
-
-  // Show elapsed time after agent joins, otherwise show current time
-  const displayHour = agentJoined ? elapsedHours : hour;
-  const displayMins = agentJoined ? elapsedMins : mins;
-  const displaySecs = agentJoined ? elapsedSecs : secs;
+  const handleLeave = async () => {
+    console.log("Leaving the call...");
+    
+    try {
+        const response = await axios.get('http://localhost:8080/api/test-token');
+        const tokenValue = response.data.token;
+        navigate(`/Complete/${tokenValue}`, { state: { token: tokenValue } });  
+    } catch (error) {
+        console.error("Error fetching token:", error);
+        navigate('/ErrorPage');
+    }
+  };
+  
 
   const handleChat = () => setActivePanel(activePanel === 'chat' ? null : 'chat');
   const handlePeople = () => setActivePanel(activePanel === 'people' ? null : 'people');
-  const handleRaise = () => setHandRaised(!handRaised);
+  const handleRaise = () => setHandRaised((prev) => !prev); 
   const handleReact = () => setActivePanel(activePanel === 'react' ? null : 'react');
   const handleCode = () => setActivePanel(activePanel === 'code' ? null : 'code');
   const handleConsole = () => setActivePanel(activePanel === 'console' ? null : 'console');
-  
-  const handleLeave = async () => {
-    // Play hangup sound
-      // Play hangup sound from bundled src/assets with better handling
-      const hangupSound = new Audio(hangupSoundFile);
-      hangupSound.volume = 1; // Full volume (0-1 scale)
-      hangupSound.muted = false; // Ensure not muted
-      hangupSound.play()
-        .then(() => console.log('✓ Hangup sound playing (from src/assets)'))
-        .catch(err => console.error('✗ Hangup sound error (from src/assets):', err));
 
-    try {
-      // Get token from backend
-      const response = await axios.get('http://localhost:8080/api/get-test-token');
-      const { token } = response.data;
-      
-      // Redirect to complete page with token
-      setTimeout(() => {
-        navigate(`/complete/:${token}`, { state: { token, candidateData: candidate } });
-      }, 500); // Wait for sound to play
-    } catch (err) {
-      console.log('Error getting token:', err);
-      // Redirect anyway even if token fetch fails
-      setTimeout(() => {
-        navigate('/complete', { state: { candidateData: candidate } });
-      }, 500);
-    }
-  };
+
+  const VideoPlaceholder = ({ role, initial }) => (
+    <div className="bg-zinc-800 w-full h-60 rounded-lg flex justify-center items-center pt-5">
+      <div className="w-20 h-20 rounded-full bg-gray-400 flex justify-center items-center">
+        <h1 className="text-4xl font-md text-gray-700">{initial}</h1>
+      </div>
+    </div>
+  );
+
+  if (!browserSupportsSpeechRecognition) {
+    return <div className="text-white p-10">Browser doesn't support speech recognition.</div>;
+  }
+
+  
+  const controlBtnClasses = "flex flex-col items-center justify-center hover:cursor-pointer p-1 rounded-md transition-colors duration-150 hover:bg-zinc-800";
+
 
   return (
-    <div className="fixed inset-0 bg-zinc-950">
-
-      {/* TOP BAR */}
-      <div className="flex justify-between text-gray-400 px-10">
-        <h1>Interview Prep Meeting</h1>
-        <div className="flex justify-center gap-3">
-          <h1>Personal</h1>
+    <div className="min-h-screen bg-zinc-950">
+      
+      {/* Top Bar */}
+      <div className="flex justify-between text-gray-400 px-10 py-1 border-b border-zinc-800">
+        <div>
+          <p className="text-lg font-semibold">Interview Meeting</p>
         </div>
+        <div>Personal</div>
       </div>
-
-      {/* MENU BAR */}
-      <div className="pt-2 px-2">
-        <div className="bg-zinc-900 w-full p-2 flex justify-between rounded-md border-b-2 border-gray-500">
-
-          <div className="flex justufy-evenly gap-3 pt-2">
+      
+      {/* Control Bar */}
+      <div className="bg-zinc-900 w-full flex justify-between py-2 border-b border-zinc-800">
+        <div className="flex items-center gap-4 pl-5">
+          <div>
             <AiOutlineSecurityScan className="text-gray-400" size={25} />
-            <h1 className="text-gray-400">{String(displayHour).padStart(2, '0')}:{String(displayMins).padStart(2, '0')}:{String(displaySecs).padStart(2, '0')}</h1>
           </div>
-
-          <div className="flex justify-evenly gap-10 text-gray-400">
-
-            <div className={`hover:text-white hover:cursor-pointer px-2 ${activePanel === 'chat' ? 'border-b-2 border-indigo-500' : ''}`} onClick={handleChat}>
-              <IoChatbubbleEllipsesOutline size={25} />
-              <p className=" text-[10px]">Chat</p>
-            </div>
-
-            <div className={`hover:text-white hover:cursor-pointer px-2 ${activePanel === 'people' ? 'border-b-2 border-indigo-500' : ''}`} onClick={handlePeople}>
-              <GoPeople size={25} />
-              <p className=" text-[10px]">People</p>
-            </div>
-
-            <div className={`hover:text-white hover:cursor-pointer px-2 ${handRaised ? 'border-b-2 border-yellow-500' : ''}`} onClick={handleRaise}>
-              <HiOutlineHandRaised size={25} className={handRaised ? 'text-yellow-500' : ''} />
-              <p className=" text-[10px]">Raise</p>
-            </div>
-
-            <div className={`hover:text-white hover:cursor-pointer px-2 ${activePanel === 'react' ? 'border-b-2 border-indigo-500' : ''}`} onClick={handleReact}>
-              <BsEmojiSmile size={25} />
-              <p className=" text-[10px]">React</p>
-            </div>
-
-            <div><p className=" text-2xl">|</p></div>
-
-            <div className={`hover:text-white hover:cursor-pointer px-2 ${activePanel === 'code' ? 'border-b-2 border-indigo-500' : ''}`} onClick={handleCode}>
-              <VscVscode className="text-blue-400" size={25} />
-              <p className=" text-[10px]">Code</p>
-            </div>
-
-            <div className={`hover:text-white hover:cursor-pointer px-2 ${activePanel === 'console' ? 'border-b-2 border-indigo-500' : ''}`} onClick={handleConsole}>
-              <CiDesktop size={25} />
-              <p className="text-[10px]">Console</p>
-            </div>
-
-            <div><p className=" text-2xl">|</p></div>
-
-            {/* ----- MIC BUTTON ----- */}
-            <div className="hover:text-white hover:cursor-pointer px-2" onClick={handleMic}>
-              {mute ? (
-                <FaMicrophoneSlash size={25} className="text-red-400" />
-              ) : (
-                <FaMicrophone size={25} className="text-gray-400 pt-1" />
-              )}
-              <p className=" text-[10px]">Mic</p>
-            </div>
-
-            <div className={`hover:text-white hover:cursor-pointer px-2`} onClick={handleLeave}>
-              <IoCallOutline className="text-red-400 hover:text-red-500" size={25} />
-              <p className=" text-[10px]">Leave</p>
-            </div>
-
-          </div>
+          {/* Dynamic Timestamp */}
+          <p className="text-gray-400 text-sm">
+            {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+          </p>
         </div>
 
-        {/* PEOPLE SECTION */}
-        <div className="flex gap-0 pt-0 px-0 h-[calc(100vh-130px)] w-full">
+        <div className="flex items-center text-gray-400 gap-8 pr-5">
           
-          {/* LEFT MAIN AREA - ALWAYS VISIBLE */}
-          <div className="flex-1 flex flex-col items-center justify-center bg-black">
+          {/* Chat Toggle */}
+          <div onClick={handleChat} className={`${controlBtnClasses} ${activePanel === 'chat' ? 'text-indigo-500' : ''}`}>
+            <IoChatbubbleEllipsesOutline size={25} />
+            <p className="text-sm">Chat</p>
+          </div>
 
-            {/* Waiting for Agent - Show before agent joins */}
-            {!agentJoined && (
-              <div className="mb-20 text-center">
-                <div className="flex justify-center text-gray-400 gap-2 mb-6">
-                  <div className="w-3 h-3  text-gray-400 rounded-full animate-bounce"></div>
-                  <div className="w-3 h-3 text-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-3 h-3 text-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                </div>
-                <p className="text-gray-400 text-lg font-semibold animate-pulse">Waiting for Agent...</p>
-              </div>
+          {/* People Toggle */}
+          <div onClick={handlePeople} className={`${controlBtnClasses} ${activePanel === 'people' ? 'text-indigo-500' : ''}`}>
+            <GoPeople size={25} />
+            <p className="text-sm">People</p>
+          </div>
+
+          {/* Hand Raise Toggle */}
+          <div onClick={handleRaise} className={`${controlBtnClasses} ${handRaised ? 'text-yellow-500' : ''}`}>
+            <HiOutlineHandRaised size={25} />
+            <p className="text-sm">Hand</p>
+          </div>
+          
+          <p className="text-4xl text-zinc-700">|</p>
+
+          {/* Code Editor Toggle */}
+          <div onClick={handleCode} className={`${controlBtnClasses} ${activePanel === 'code' ? 'text-blue-400' : ''}`}>
+            <VscVscode size={25} />
+            <p className="text-sm">Code</p>
+          </div>
+
+          {/* Console Toggle */}
+          <div onClick={handleConsole} className={`${controlBtnClasses} ${activePanel === 'console' ? 'text-green-400' : ''}`}>
+            <CiDesktop size={25} />
+            <p className="text-sm">Console</p>
+          </div>
+          
+          {/* Reaction Toggle */}
+          <div onClick={handleReact} className={`${controlBtnClasses} ${activePanel === 'react' ? 'text-yellow-500' : ''}`}>
+            <BsEmojiSmile size={25} />
+            <p className="text-sm">React</p>
+          </div>
+          
+          <p className="text-4xl text-zinc-700">|</p>
+
+          {/* Mic Toggle */}
+          <div onClick={handleMic} className={controlBtnClasses}>
+            {mute ? (
+              <FaMicrophoneSlash size={25} />
+            ) : (
+              // Show listening indicator
+              <FaMicrophone className={`text-red-400 ${listening ? 'animate-pulse' : ''}`} size={25} />
             )}
+            <p className="text-sm">Mic</p>
+          </div>
 
-            {/* Agent - Shows after 1-2 mins with animation */}
-            {agentJoined && (
-              <div className="mt-auto mb-10 pt-10 animate-fade-in">
-                <div className="bg-zinc-900 rounded-md w-100 h-60 flex justify-center items-center mt-10">
-                  <span className={`bg-gray-100 rounded-full w-32 h-32 flex justify-center items-center relative 
-                    ${aiSpeaking ? "animate-ping-custom border-4 border-green-500" : ""}`}>
-                    <h1 className="text-8xl text-gray-400">A</h1>
-                  </span>
-                </div>
-                <p className="text-white text-center mt-2 text-sm">Agent</p>
-              </div>
+          {/* Camera Toggle */}
+          <div onClick={handleWebCam} className={controlBtnClasses}>
+            {cam ? (
+              <FaVideo className="text-red-400" size={25} />
+            ) : (
+              <FaVideoSlash size={25} />
             )}
+            <p className="text-sm">Camera</p>
+          </div>
 
-            {/* You - Always visible */}
-            <div className="mt-auto mb-10">
-              <div className="bg-zinc-900 rounded-md w-100 h-60 flex justify-center items-center">
-                <span className={`bg-gray-100 rounded-full w-32 h-32 flex justify-center items-center relative
-                  ${youSpeaking ? "animate-ping-custom border-2 border-pink-500" : ""}`}>
-                  <h1 className="text-8xl text-gray-400">Y</h1>
-                </span>
-              </div>
-              <p className="text-white text-center mt-2 text-sm">You</p>
+          <p className="text-4xl text-zinc-700">|</p>
+
+          {/* Leave Button */}
+          <div onClick={handleLeave} className={`${controlBtnClasses} text-red-400 hover:text-red-500`}>
+            <IoCallOutline size={25} />
+            <p className="text-sm">Leave</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Layout: Video Feeds and Side Panel */}
+      <div className="flex justify-between item-center"> 
+        {/* Video Feeds (Left Column) */}
+        <div className="flex flex-col gap-10 p-5 pl-10 flex-1 max-w-lg ">
+            {/* Agent Video */}
+            <div className="flex-1 min-h-0">
+                <VideoPlaceholder role="Agent" initial="A" />
+                <p className="text-white text-center mt-1">Agent</p>
             </div>
 
-          </div>
-
-          {/* RIGHT PANEL - RENDER ACTIVE COMPONENT */}
-          <div className="w-150 h-full bg-zinc-900 border-l border-zinc-700 flex flex-col overflow-hidden">
-            {activePanel === 'chat' && <Chat />}
-            {activePanel === 'people' && <People agentJoined={agentJoined} />}
-            {activePanel === 'join' && <Join />}
-            {activePanel === 'code' && <Code className="w-200"/>}
-            {activePanel === 'console' && <Console/>}
-            {activePanel === 'react' && <Reaction/>}           
-          </div>
-
+            {/* Your Video (Self-View) - Premium Feature: Webcam Stream */}
+            <div className="flex-1 min-h-0">
+                <div className="bg-zinc-800 w-full h-60 rounded-lg overflow-hidden">
+                    {cam ? (
+                        <Webcam 
+                            audio={!mute} // Use mute state for audio
+                            ref={webcamRef} 
+                            mirrored={true} 
+                            videoConstraints={{ facingMode: "user" }}
+                            className="w-full h-full object-cover"
+                        />
+                    ) : (
+                        <VideoPlaceholder role="You" initial="Y" />
+                    )}
+                </div>
+                <p className="text-white text-center mt-1">You</p>
+            </div>
         </div>
 
+        {/* Side Panel (Right Column) */}
+        {activePanel && (
+            <div className="w-150 bg-zinc-900 border-l border-zinc-700 flex flex-col overflow-hidden transition-all duration-300 ">
+              {activePanel === 'chat' && <Chat />}
+              {activePanel === 'people' && <People candidate={candidate} />}
+              {activePanel === 'join' && <Join />}
+              {activePanel === 'code' && <Code />} 
+              {activePanel === 'console' && <Console/>}
+              {activePanel === 'react' && <Reaction/>} 
+            </div>
+        )}
       </div>
 
-      {/* TRANSCRIPT */}
-      <div className="px-10">
-        <h1 className="text-4xl text-white">{transcript}</h1>
-      </div>
-
+      
+      {/* <div className="bg-zinc-800 text-gray-300 py-2 px-5 fixed bottom-0 left-0 right-0 border-t border-zinc-700">
+        <p className="font-bold text-sm flex items-center gap-2">
+          Real-Time Transcript
+          {listening && (
+            <span className="text-red-400 animate-pulse flex items-center gap-1">
+              <FaMicrophone size={14} /> (Listening...)
+            </span>
+          )}
+        </p>
+        <div className="text-sm text-white min-h-[20px]"> 
+          {transcript}
+        </div>
+      </div> */}
+      
     </div>
   );
 };

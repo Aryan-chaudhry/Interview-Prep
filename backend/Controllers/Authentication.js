@@ -1,101 +1,143 @@
     const UserModel = require('../Models/userModel');
     const bcrypt = require('bcrypt');
-    const jwt = require('jsonwebtoken'); 
     const dotenv = require('dotenv');
+    const generateToken = require('../utils/utils')
+    const cloudinary = require("../lib/cloudinary");
+const userModel = require('../Models/userModel');
     dotenv.config();
 
-    const JWT_SECRET = process.env.JWT_SECRET;
 
     const Signup = async (req, res) => {
         // 1. Destructure the data using the keys sent from the frontend
-        const { User, Email, Password } = req.body; 
+        const { fullName, email, password } = req.body; 
         
         // Simple validation (though Mongoose will also validate)
-        if (!User || !Email || !Password) {
+        if (!fullName || !email || !password) {
             return res.status(400).json({ message: 'All fields are required.' });
+        }
+        if(password.length < 6){
+            return res.status(400).json({message:"Password must be at least 6 characters"})
         }
 
         try {
             // 2. Check if user already exists
-            const existingUser = await UserModel.findOne({ email: Email }); // Use the schema key 'email' for query
+            const existingUser = await UserModel.findOne({ email: email }); // Use the schema key 'email' for query
             if (existingUser) {
                 return res.status(409).json({ message: 'Email address is already registered.' });
             }
 
             // 3. Hash the password
             const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(Password, salt);
+            const hashedPassword = await bcrypt.hash(password, salt);
 
             // 4. Create and save new user
             const newUser = new UserModel({
                 // MAPPING: Schema key: Frontend key
-                name: User,             // 'name' in schema gets value from 'User'
-                email: Email,           // 'email' in schema gets value from 'Email'
+                name:fullName,             // 'name' in schema gets value from 'User'
+                email,           // 'email' in schema gets value from 'Email'
                 passwordHash: hashedPassword, // 'passwordHash' in schema gets the HASHED 'Password'
             });
 
-            await newUser.save(); // Line 32 from your error trace now saves successfully
-
-            // 5. Send a success response
-            return res.status(201).json({ 
-                message: 'User registered successfully!',
-                userId: newUser._id 
-            });
+            if(newUser){
+                // generate jwt token
+                generateToken(newUser._id, res)
+                await newUser.save();
+                res.status(201).json({
+                    _id:newUser._id,
+                    fullname:newUser.name,
+                    email: newUser.email,
+                    profilePic: newUser.profilePic,
+                });
+            }
+            else{
+                res.status(400).json({message:"Invalid user data"});
+            }
 
         } catch (error) {
-            // Handle Mongoose validation errors (like unique email failure)
-            if (error.code === 11000) {
-                return res.status(409).json({ message: 'Email address is already registered.' });
-            }
-            
-            console.error("Signup failed:", error);
-            return res.status(500).json({ 
-                message: 'Server error during signup. Check server logs for details.',
-            });
+            console.log("error in signup controller", error.message);
+            res.status(500).json({message:"Internal sever error"})
         }
     };
 
 
     const Login = async (req, res) => {
-        const { Email, Password } = req.body; 
-        
-        if (!Email || !Password) {
-            return res.status(400).json({ message: 'Email and password are required.' });
+    const { email, password } = req.body;
+
+    try {
+        const user = await UserModel.findOne({ email: email });
+
+        if (!user) {
+            return res.status(404).json({ message: "Invalid Credential" });
         }
 
-        try {
-            const user = await UserModel.findOne({ email: Email }); 
+        const ispasswordCorrect = await bcrypt.compare(password, user.passwordHash);
 
-            if (!user) {
-                return res.status(401).json({ message: 'Invalid credentials.' }); 
-            }
+        if (!ispasswordCorrect) {
+            return res.status(404).json({ message: "Invalid Credential" });
+        }
 
-            const isMatch = await bcrypt.compare(Password, user.passwordHash);
+        generateToken(user._id, res);
 
-            if (!isMatch) {
-                return res.status(401).json({ message: 'Invalid credentials.' });
-            }
-
-            // 4. Login Successful: GENERATE JWT with 5-day expiry
-            const token = jwt.sign(
-                { id: user._id, email: user.email }, // Payload
-                JWT_SECRET, // Secret key
-                { expiresIn: '5d' } // ⬅️ TOKEN EXPIRES AFTER 5 DAYS
-            );
-            
-            return res.status(200).json({ 
-                message: 'Login successful!',
-                token: token, // SEND THE TOKEN TO THE CLIENT
-                name: user.name
-            });
+        res.status(200).json({
+            _id: user._id,
+            fullname: user.name,
+            email: user.email,
+            profilePic: user.profilePic,
+        });
 
         } catch (error) {
-            console.error("Login failed:", error);
-            return res.status(500).json({ 
-                message: 'Server error during login.',
-            });
+            console.log("Error in login controller", error.message);
+            res.status(500).json({ message: "Internal Server Error" });
         }
     };
 
 
-    module.exports = { Signup, Login };
+    const Logout = async (req, res) => {
+        try {
+            res.cookie("jwt", "", {maxAge:0});
+            res.status(200).json({message:"Logged out successfully"})
+        } catch (error) {
+            console.log("error in logout controller", error.message);
+            res.status(500).json({message:"Internal Server Error"})
+        }
+    }
+
+    const updateProfile = async (req, res) => {
+    try {
+        const { profilePic } = req.body;
+        const userId = req.user._id;
+
+        if (!profilePic) {
+            return res.status(400).json({ message: "Profile picture is required" });
+        }
+
+        // Upload Base64 or image URL to Cloudinary
+        const uploadResponse = await cloudinary.uploader.upload(profilePic, {
+            folder: "user_profiles",
+        });
+
+        const updatedUser = await userModel.findByIdAndUpdate(
+            userId,
+            { profilePic: uploadResponse.secure_url },
+            { new: true }
+        );
+
+        res.status(200).json(updatedUser);
+        } catch (error) {
+            console.log("Error in update profile", error);
+            res.status(500).json({ message: "Internal Server error" });
+        }
+    };
+
+
+    const checkAuth = (req, res) => {
+        try {
+            res.status(200).json(req.user);
+        } catch (error) {
+            console.log('error in checkAuth controller', error.message);
+            res.status(500).json({message:'Internal Serer Error'});
+        }
+    }
+
+
+    module.exports = { Signup, Login, Logout, updateProfile, checkAuth };

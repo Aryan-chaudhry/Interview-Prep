@@ -1,117 +1,154 @@
-// frontend/components/Signup.jsx (No changes needed, it is ready to work with the updated backend)
+import { useState } from "react";
+import { useAuthStore } from "../store/useAuthStore";
+import { Eye, EyeOff, Loader2, Lock, Mail, MessageSquare, User } from "lucide-react";
+import { Link } from "react-router-dom";
 
-import React, {useState, useEffect} from "react";
-import { Navigate, useNavigate } from "react-router-dom";
-import axios from 'axios';
-import { ToastContainer, toast } from 'react-toastify';
+import AuthImagePattern from "../components/AuthImagePattern";
+import toast from "react-hot-toast";
 
 const Signup = () => {
-  const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: "",
+    password: "",
+  });
 
-  const [fullname, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const { signup, isSigningUp } = useAuthStore();
 
-  const handleSubmit = async (e) => { 
-    e.preventDefault(); 
+  const validateForm = () => {
+    if (!formData.fullName.trim()) return toast.error("Full name is required");
+    if (!formData.email.trim()) return toast.error("Email is required");
+    if (!/\S+@\S+\.\S+/.test(formData.email)) return toast.error("Invalid email format");
+    if (!formData.password) return toast.error("Password is required");
+    if (formData.password.length < 6) return toast.error("Password must be at least 6 characters");
 
-    try {
-      const userData = {
-        User: fullname, // ⬅️ Sent to backend
-        Email: email,   // ⬅️ Sent to backend
-        Password: password // ⬅️ Sent to backend
-      }
-      
-      const response = await axios.post('http://localhost:8080/api/signup', userData);
+    return true;
+  };
 
-      if (response.status === 201 || response.status === 200) {
-        toast.success('Account created successfully!');
-        setFullName('');
-        setEmail('');
-        setPassword('');
-        setTimeout(()=>{
-          navigate('/login'); 
-        }, 2000);
-      } else {
-        toast.error('Signup failed with an unexpected response.');
-      }
-    } catch (error) {
-      console.error("Signup error:", error);
-      
-      let errorMessage = 'Something went wrong. Please try again later!';
-      if (error.response && error.response.data && error.response.data.message) {
-        // This will display the specific message like 'Email address is already registered.'
-        errorMessage = error.response.data.message;
-      }
-      toast.error(errorMessage);
-    }
-  }
+  const handleSubmit = (e) => {
+    e.preventDefault();
 
-  const redirectLogin = () => {
-    navigate('/login')
-  }
+    const success = validateForm();
+
+    if (success === true) signup(formData);
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-zinc-900 via-zinc-950 to-black text-white p-6">
-      <ToastContainer />
-      <div className="w-full max-w-md bg-zinc-900/70 backdrop-blur-xl border border-zinc-700 rounded-2xl shadow-2xl p-8 animate-fadeIn">
-        <h2 className="text-3xl font-bold text-center bg-gradient-to-r from-green-400 to-green-500 bg-clip-text text-transparent">
-          Create Account
-        </h2>
-
-        <p className="text-gray-400 text-center mt-2">Start your interview preparation journey</p>
-
-        <form onSubmit={handleSubmit} className="mt-8 space-y-5">
-          <div>
-            <label className="text-gray-300 text-sm">Full Name</label>
-            <input
-              type="text"
-              value={fullname}
-              onChange={(e) => setFullName(e.target.value)}
-              className="w-full mt-2 p-3 rounded-xl bg-zinc-800 border border-zinc-700 text-white focus:outline-none focus:border-green-500 transition"
-              placeholder="Enter your full name"
-              required
-            />
+    <div className="min-h-screen grid lg:grid-cols-2">
+      {/* left side */}
+      <div className="flex flex-col justify-center items-center p-6 sm:p-12">
+        <div className="w-full max-w-md space-y-8">
+          {/* LOGO */}
+          <div className="text-center mb-8">
+            <div className="flex flex-col items-center gap-2 group">
+              <div
+                className="size-12 rounded-xl bg-primary/10 flex items-center justify-center 
+              group-hover:bg-primary/20 transition-colors"
+              >
+                <MessageSquare className="size-6 text-primary" />
+              </div>
+              <h1 className="text-2xl font-bold mt-2">Create Account</h1>
+              <p className="text-base-content/60">Get started with your free account</p>
+            </div>
           </div>
 
-          <div>
-            <label className="text-gray-300 text-sm">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full mt-2 p-3 rounded-xl bg-zinc-800 border border-zinc-700 text-white focus:outline-none focus:border-green-500 transition"
-              placeholder="Enter your email"
-              required
-            />
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text font-medium">Full Name</span>
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <User className="size-5 text-base-content/40" />
+                </div>
+                <input
+                  type="text"
+                  className={`input input-bordered w-full pl-10`}
+                  placeholder="John Doe"
+                  value={formData.fullName}
+                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text font-medium">Email</span>
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Mail className="size-5 text-base-content/40" />
+                </div>
+                <input
+                  type="email"
+                  className={`input input-bordered w-full pl-10`}
+                  placeholder="you@example.com"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text font-medium">Password</span>
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="size-5 text-base-content/40" />
+                </div>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  className={`input input-bordered w-full pl-10`}
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="size-5 text-base-content/40" />
+                  ) : (
+                    <Eye className="size-5 text-base-content/40" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" className="btn btn-primary w-full" disabled={isSigningUp}>
+              {isSigningUp ? (
+                <>
+                  <Loader2 className="size-5 animate-spin" />
+                  Loading...
+                </>
+              ) : (
+                "Create Account"
+              )}
+            </button>
+          </form>
+
+          <div className="text-center">
+            <p className="text-base-content/60">
+              Already have an account?{" "}
+              <Link to="/login" className="link link-primary">
+                Sign in
+              </Link>
+            </p>
           </div>
-
-          <div>
-            <label className="text-gray-300 text-sm">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full mt-2 p-3 rounded-xl bg-zinc-800 border border-zinc-700 text-white focus:outline-none focus:border-green-500 transition"
-              placeholder="Create a password"
-              required
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="w-full py-3 mt-4 rounded-xl bg-gradient-to-r from-green-600 to-green-500 text-black font-semibold shadow-lg hover:scale-105 transition shadow-lg hover:scale-105 transition"
-          >
-            Sign Up
-          </button>
-        </form>
-
-        <p onClick={redirectLogin} className="text-center text-gray-500 text-sm mt-6">
-          Already have an account? <span className="text-green-400 hover:underline cursor-pointer">Login</span>
-        </p>
+        </div>
       </div>
 
+      {/* right side */}
+
+      <AuthImagePattern
+        title="Join our community"
+        subtitle="Connect with recruiters, share moments, and stay in touch with your loved ones."
+      />
     </div>
   );
 };
-
 export default Signup;
