@@ -8,6 +8,8 @@ const sendMessage = async (req, res) => {
         const {id:receiverid} = req.params;
         const senderId = process.env.INTERVIEW_AGENT;
 
+        console.log("receiverid", receiverid);
+        console.log(text, image);
         let imageUrl;
 
         if(image){

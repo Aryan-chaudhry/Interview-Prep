@@ -13,7 +13,7 @@ import { BsEmojiSmile } from "react-icons/bs";
 import { GoPeople } from "react-icons/go";
 
 import Chat from "./Chat";
-import People from "./Chat"; 
+import People from "./People"; 
 import Join from "./Join";
 import Code from "./Code";
 import Console from "./Console";
