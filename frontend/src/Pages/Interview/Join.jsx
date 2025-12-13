@@ -1,10 +1,13 @@
-import React from 'react';
+import React, {useState} from 'react';
 import { useAuthStore } from '../../Store/useAuthStore';
 import { useNavigate } from 'react-router-dom';
+import {Loader} from "lucide-react"
+import PageNotFound from '../PageNotFound';
 
-const Join = ({ job }) => {
+const Join = ({ job, joinInterview }) => {
     const { authUser } = useAuthStore();
     const navigate = useNavigate();
+    
 
     const formatDate = (iso) => {
         if (!iso) return 'N/A';
@@ -19,9 +22,8 @@ const Join = ({ job }) => {
         return (
             <div className="bg-white">
                 <div className="mx-auto py-16 sm:px-6 lg:px-8">
-                    <div className="relative isolate overflow-hidden rounded-2xl bg-white px-6 py-14 shadow-md sm:px-16 text-center">
-                        <p className="text-gray-600">Loading job details…</p>
-                  
+                    <div className="relative isolate overflow-hidden rounded-2xl bg-white px-6 py-14 shadow-md sm:px-16 text-center flex justify-center items-center">
+                        <PageNotFound/>
                     </div>
                 </div>
             </div>
@@ -29,8 +31,7 @@ const Join = ({ job }) => {
     }
 
     const handleJoin = () => {
-        const id = authUser?._id || job?.id || job?._id || 'me';
-        navigate(`/interview/${id}`, { state: { job } });
+        joinInterview(true);
     }
 
     return (
