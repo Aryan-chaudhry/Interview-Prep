@@ -1,4 +1,10 @@
 const { GoogleGenAI } = require("@google/genai");
+const prompt = require('../Intelligence/geminiInterviewDB');
+const interviewModel = require('../Models/interviewModel');
+
+const ai =  new GoogleGenAI({
+                apiKey: process.env.GEMINI_API_KEY,
+            });
 
 const getResponse = async (req, res) => {
     try {
@@ -9,9 +15,6 @@ const getResponse = async (req, res) => {
             return res.status(400).json({ message: "Prompt is required" });
         }
 
-        const ai = new GoogleGenAI({
-            apiKey: process.env.GEMINI_API_KEY,
-        });
 
         const result = await ai.models.generateContent({
             model: "gemini-2.5-flash",
@@ -39,4 +42,76 @@ const getResponse = async (req, res) => {
     }
 };
 
-module.exports = getResponse;
+const setInterview = async (req, res) => {
+  try {
+    const { User, Job, Resume, isPremium } = req.body;
+
+    if (!User || !Job) {
+      return res.status(400).json({ message: "Invalid request data" });
+    }
+
+    const companyName = Job.companyName;
+    const jobRole = Job.jobRole;
+
+
+    
+    const result = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: [
+        {
+          role: "user",
+          parts: [
+            {
+              text: isPremium
+                ? `According to the prompt given to you, generate HARD and challenging interview questions.
+                Job: ${JSON.stringify(Job)}
+                Resume: ${Resume}
+                Prompt: ${prompt}`
+                                : `According to the prompt given to you, generate interview questions.
+                Job: ${JSON.stringify(Job)}
+                Resume: ${Resume}
+                Prompt: ${prompt}`,
+            },
+          ],
+        },
+      ],
+    });
+
+    const aiText = result.candidates[0].content.parts[0].text;
+
+    const cleanedResponse = aiText
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .trim();
+
+    const aiResponseJson = JSON.parse(cleanedResponse);
+
+    // ✅ 3. Save valid interview document
+    const interviewStatus = new interviewModel({
+      userId: User,
+      companyName,
+      jobRole,
+      interviewType: "mixed", 
+      questions: aiResponseJson.questions,
+      totalScore: 125,          
+    });
+
+    await interviewStatus.save();
+
+    return res.status(201).json({
+      message: "Interview Activated",
+      interview: interviewStatus,
+    });
+
+  } catch (error) {
+    console.error("error in generating ai questions", error);
+
+    return res.status(500).json({
+      message: "Failed to generate interview questions",
+      error: error.message,
+    });
+  }
+};
+
+
+module.exports = {getResponse, setInterview};

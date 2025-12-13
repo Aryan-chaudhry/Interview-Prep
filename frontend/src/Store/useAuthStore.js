@@ -10,7 +10,6 @@
         isLoggingIn: false,
         isUpdatingProfile: false,
         isChekingAuth: true,
-        socket: null,
 
         checkAuth: async () => {
             try {

@@ -20,17 +20,17 @@ import PageNotFound from './Pages/PageNotFound.jsx';
 
 function App() {
 
-  const {authUser, checkAuth, isCheckingAuth, onlineUsers} = useAuthStore();
+  const {authUser, checkAuth, isCheckingAuth} = useAuthStore();
   const {theme} = useThemeStore();
   const location = useLocation();
 
-  console.log({onlineUsers})
+  
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth])
 
-  console.log({authUser});
+
   
   if(isCheckingAuth && !authUser) return (
     <div className='flex item-center justify-center h-screen'>

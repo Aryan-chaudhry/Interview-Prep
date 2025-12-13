@@ -126,7 +126,7 @@ const JobCard = ({
         </div>
 
         {isQualifiedForJob(job.id) && (
-          <button onClick={() => activateInterview(job)} className="btn bg-teal-600 text-white btn-sm w-full flex items-center justify-center gap-2 animate-pulse hover:bg-teal-500">
+          <button onClick={() => activateInterview(job, isPremium)} className="btn bg-teal-600 text-white btn-sm w-full flex items-center justify-center gap-2 animate-pulse hover:bg-teal-500">
             <CheckCircle size={16} />
             Activate Interview
           </button>

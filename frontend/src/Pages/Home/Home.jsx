@@ -168,26 +168,26 @@ const Home = () => {
     return resumeScores[jobId]?.skillScore ?? resumeScores[jobId]?.score ?? null;
   };
 
-  const activateInterview = (job) => {
+  const activateInterview = (job, isAPremium) => {
     // if resume text isn't available yet but we have the original file, extract it now for this job
     if (!resumeContent && resumeFile) {
       (async () => {
         try {
           const result = await scanResume(resumeFile, job);
           if (result && result.success && result.resumeText) {
-            navigate(`/interview/${authUser._id}`, { state: { job, resumeContent: result.resumeText } });
+            navigate(`/interview/${authUser._id}`, { state: { job, resumeContent: result.resumeText, isAPremium, } });
             return;
           }
         } catch (e) {
           console.warn('On-demand resume extraction failed', e);
         }
         // fallback
-        navigate(`/interview/${authUser._id}`, { state: { job, resumeContent } });
+        navigate(`/interview/${authUser._id}`, { state: { job, resumeContent, isAPremium } });
       })();
       return;
     }
 
-    navigate(`/interview/${authUser._id}`, { state: { job, resumeContent } });
+    navigate(`/interview/${authUser._id}`, { state: { job, resumeContent, isAPremium } });
   }
 
   return (

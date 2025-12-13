@@ -72,7 +72,7 @@ const FilterBar = ({
               onClick={() => setPremiumOnly(p === 'Premium')}
               className={`btn btn-sm ${
                 premiumOnly && p === 'Premium'
-                  ? 'btn-primary'
+                  ? 'bg-teal-500'
                   : !premiumOnly && p === 'All'
                   ? 'bg-teal-500'
                   : 'btn-ghost'

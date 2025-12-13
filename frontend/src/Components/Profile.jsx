@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAuthStore } from "../store/useAuthStore";
+import { useAuthStore } from "../Store/useAuthStore";
 import { Camera, Mail, User } from "lucide-react";
 import { Loader } from "lucide-react";
 import { isDragging } from "framer-motion";
@@ -104,7 +104,9 @@ const Profile = () => {
               </div>
               <div className="flex items-center justify-between py-2">
                 <span>Account Status</span>
-                <span className="text-green-500">Active</span>
+                <div className="bg-white rounded-full border-1 border-teal-600">
+                  <span className="text-teal-500 px-5">Active</span>
+                </div>
               </div>
             </div>
           </div>

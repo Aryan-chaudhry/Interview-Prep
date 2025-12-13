@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {Loader} from "lucide-react"
 import PageNotFound from '../PageNotFound';
 
-const Join = ({ job, joinInterview }) => {
+const Join = ({ job, setInterview }) => {
     const { authUser } = useAuthStore();
     const navigate = useNavigate();
     
@@ -21,22 +21,20 @@ const Join = ({ job, joinInterview }) => {
     if (!job) {
         return (
             <div className="bg-white">
-                <div className="mx-auto py-16 sm:px-6 lg:px-8">
-                    <div className="relative isolate overflow-hidden rounded-2xl bg-white px-6 py-14 shadow-md sm:px-16 text-center flex justify-center items-center">
-                        <PageNotFound/>
-                    </div>
-                </div>
+                <div className="relative isolate overflow-hidden rounded-2xl bg-white px-6 py-14  sm:px-16 text-center flex justify-center items-center">
+                    <PageNotFound/>
+                </div>    
             </div>
         );
     }
 
     const handleJoin = () => {
-        joinInterview(true);
+        setInterview(true);
     }
 
     return (
         <div className="bg-white">
-            <div className="mx-auto py-12 sm:px-6 lg:px-8">
+            <div className="mx-auto py-15 sm:px-6 lg:px-8">
                 <div className="relative isolate overflow-hidden rounded-2xl bg-white px-6 py-14 shadow-md sm:px-16">
 
                     <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-12">
@@ -68,12 +66,12 @@ const Join = ({ job, joinInterview }) => {
                         </div>
 
                         <div className="mt-6 flex justify-center gap-2">
-                            <img src={authUser.profilePic} alt="User" className='w-10 h-10 object-cover rounded-full' />
+                            <img src={authUser?.profilePic} alt="User" className='w-10 h-10 object-cover rounded-full' />
                             <button onClick={handleJoin}
                                 type="button"
                                 className="inline-flex items-center gap-x-2 rounded-lg bg-teal-600 px-5 py-3 text-sm font-semibold text-white shadow hover:bg-teal-500"
                             >
-                                Join Now
+                                Activate Now
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
                                     <path fillRule="evenodd" d="M16.72 7.72a.75.75 0 011.06 0l3.75 3.75a.75.75 0 010 1.06l-3.75 3.75a.75.75 0 11-1.06-1.06l2.47-2.47H3a.75.75 0 010-1.5h16.19l-2.47-2.47a.75.75 0 010-1.06z" clipRule="evenodd" />
                                 </svg>
