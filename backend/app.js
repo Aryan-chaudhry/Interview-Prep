@@ -5,7 +5,8 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const axios = require("axios");
 const cookieParser = require('cookie-parser');
-const {app, server} = require('./socket/socket.js')
+const AddJobs = require('./jobs/addJobsToDB.js');
+const app = express();
 
 dotenv.config();
 
@@ -20,8 +21,8 @@ const connectDB = async () => {
 };
 
 connectDB();
+// AddJobs();
 
-/* ------------------ EXPRESS + SOCKET SERVER ------------------ */
 
 
 app.use(cors({
@@ -33,28 +34,24 @@ app.use(express.json());
 app.use(bodyParser.json());
 app.use(cookieParser());
 
-/* ------------------ ROUTERS (UNCHANGED) ------------------ */
-const jobsRouter = require('./Routers/jobsRouter.js');
-const extractPdfText = require('./Routers/resumeScanner.js');
 const Authentication = require('./Routers/Authentication.js');
 const completeTestToken = require('./Routers/TestComplete.js');
-const userData = require('./Routers/UserData.js');
-const codeExecutor = require('./Routers/codeExecutor.js');
-const chatmessages = require("./Routers/chatMessage.js");
+const getJobs = require('./Routers/getJobs.js')
+const CommunicateWithAi = require('./Routers/gemini.js')
 
-app.use('/api', jobsRouter);
-app.use('/api', extractPdfText);
 app.use('/api', Authentication);
 app.use('/api', completeTestToken);
-app.use('/api', userData);
-app.use('/api', codeExecutor);
-app.use('/api', chatmessages);
+app.use('/api', getJobs);
+app.use('/api', CommunicateWithAi);
+
+
 
 app.get('/', (req, res) => res.send('Server is running...'));
 
 
 
-const { GoogleGenAI } = require("@google/genai");
+
+
 
 
 // const ai = new GoogleGenAI({
@@ -148,6 +145,6 @@ const { GoogleGenAI } = require("@google/genai");
 
 const PORT = process.env.PORT || 8080;
 
-server.listen(PORT, () => {
+app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });

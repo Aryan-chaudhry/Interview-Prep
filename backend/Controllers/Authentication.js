@@ -3,7 +3,7 @@
     const dotenv = require('dotenv');
     const generateToken = require('../utils/utils')
     const cloudinary = require("../lib/cloudinary");
-const userModel = require('../Models/userModel');
+    const userModel = require('../Models/userModel');
     dotenv.config();
 
 
