@@ -29,7 +29,7 @@ const InterviewSchema = new mongoose.Schema(
     questions: [
       {
         question: {
-          type: String,
+          type: String,  
           required: true,
         },
         category: {
@@ -39,7 +39,7 @@ const InterviewSchema = new mongoose.Schema(
         score: {
           type: Number,
           min: 0,
-          max: 10,
+          max: 50,
         },
       },
     ],
@@ -47,7 +47,7 @@ const InterviewSchema = new mongoose.Schema(
     totalScore: {
       type: Number,
       min: 0,
-      max: 100,
+      max: 200,
       default: 0,
       required:true,
     },

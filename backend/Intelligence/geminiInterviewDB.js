@@ -38,10 +38,10 @@ CATEGORY RULES:
 - "technical": Role-specific technical knowledge
 - "behavioral": Communication, teamwork, decision-making, leadership
 - "problem-solving": Coding or algorithmic challenges (purely based upon data structure and algorithm).
-problem solving question is like 
-statement: problemstatement(breifly describe)
-exaple: give example
-constraints: give constratints
+  problem solvong question is on string format
+    which contain problem statement then in next line example and in next line constraints  
+    make sure very thing is in string format.
+  
 
 Now generate the interview questions based on the provided job and resume.
 `;
