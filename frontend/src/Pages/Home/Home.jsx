@@ -175,19 +175,19 @@ const Home = () => {
         try {
           const result = await scanResume(resumeFile, job);
           if (result && result.success && result.resumeText) {
-            navigate(`/interview/${authUser._id}`, { state: { job, resumeContent: result.resumeText, isAPremium, } });
+            navigate(`/interview`, { state: { job, resumeContent: result.resumeText, isAPremium, } });
             return;
           }
         } catch (e) {
           console.warn('On-demand resume extraction failed', e);
         }
         // fallback
-        navigate(`/interview/${authUser._id}`, { state: { job, resumeContent, isAPremium } });
+        navigate(`/interview`, { state: { job, resumeContent, isAPremium } });
       })();
       return;
     }
 
-    navigate(`/interview/${authUser._id}`, { state: { job, resumeContent, isAPremium } });
+    navigate(`/interview`, { state: { job, resumeContent, isAPremium } });
   }
 
   return (

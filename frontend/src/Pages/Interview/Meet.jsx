@@ -1,369 +1,209 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useAuthStore } from '../../Store/useAuthStore';
-import Vapi from '@vapi-ai/web';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { FaLaptopCode, FaMicrophone, FaMicrophoneSlash, FaVideo, FaVideoSlash } from 'react-icons/fa';
-import { VscVscode } from 'react-icons/vsc';
-import { IoShield, IoCall, IoHandLeft } from 'react-icons/io5';
-import Code from './Code';
+import { useAuthStore } from '../../Store/useAuthStore';
+import {
+  ShieldUser,
+  Users,
+  Code,
+  Phone,
+  Mic,
+  MicOff,
+  Video,
+  VideoOff,
+  SquareChevronRight,
+} from 'lucide-react';
+import User from './User';
+import VsCode from './Code';
 import Console from './Console';
 
-const Meet = ({ userId, job, Resume }) => {
-    console.log(job);
-    console.log(Resume);
+const Meet = () => {
 
-    const { authUser } = useAuthStore();
+  const { authUser } = useAuthStore();
+  const userId = authUser?._id;
 
-    // state
-    const [questions, setQuestions] = useState([]);
-    const [handRaised, setHandRaised] = useState(false);
-    const [mute, setMute] = useState(true);
-    const [webcam, setWebCam] = useState(false);
-    const [assistantSpeaking, setAssistantSpeaking] = useState(false);
-    const [showConsole, setShowConsole] = useState(true);
-    const [showCode, setShowCode] = useState(false);
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const [answers, setAnswers] = useState([]);
+  const streamRef = useRef(null);
+  const videoStreamRef = useRef(null);
+  const videoRef = useRef(null);
+  const apiTriggger = useRef(false);
 
-    // vapi session
-    const vapiRef = useRef(null);
-    const assistantSessionRef = useRef(null);
-    const videoRef = useRef(null);
-    const mediaStreamRef = useRef(null);
-    const reconnectRef = useRef({ attempts: 0 });
-    const answeredRef = useRef(false); // 🔒 PREVENT DUPLICATE ANSWERS
-    const MAX_RECONNECT = 3;
+  const [questions, setQuestion] = useState([]);
+  const [mic, setMicOff] = useState(true); // off by default
+  const [videoOff, setVideoOff] = useState(true); // off by default
+  const [myconsole, setConsole] = useState(false);
+  const [mycode, setCode] = useState(true);
+  const [people, setPeople] = useState(false);
+  const [language, setLanguage] = useState('');
+  const [coding, setCoding] = useState('');
 
-    if (!vapiRef.current) vapiRef.current = new Vapi(import.meta.env.VITE_VAPI_PUBLIC_KEY);
-    const vapi = vapiRef.current;
+  const getQuestion = async () => {
+    try {
+      const response = await axios.get(
+        `http://localhost:8080/api/interview-question/${userId}`
+      );
+      setQuestion(response.data.Questions);
+      console.log(response.data.Questions)
+      toast.success('please enable full screen mode by press f11');
+    } catch (error) {
+      toast.error('Server Error');
+      console.log(error);
+    }
+  };
 
-    const getQuestion = async () => {
-        try {
-            const response = await axios.get(`http://localhost:8080/api/interview-question/${userId}`);
-            console.log(response.data);
-            setQuestions(response.data.Questions || []);
-            toast.success('Pannel is in queue please Wait Patiently');
-        } catch (error) {
-            console.error('error in getting interview question', error);
-            toast.error('Interview Crash please try again after some time');
-        }
-    };
+  useEffect(() => {
+    if (!userId) return;
+    if (apiTriggger.current) return;
 
-    useEffect(() => {
-        getQuestion();
-        console.log("api trigger");
-    }, []);
+    apiTriggger.current = true;
+    getQuestion();
+  }, [userId]);
 
-    // cleanup on unmount
-    useEffect(() => {
-        return () => {
-            try {
-                assistantSessionRef.current?.stop();
-            } catch (e) {}
-            try { stopCamera(); } catch (e) {}
-        };
-    }, []);
+  const toggleMic = async () => {
+    setMicOff(prev => {
+      if (prev === true) {
+        navigator.mediaDevices.getUserMedia({ audio: true })
+          .then(stream => {
+            streamRef.current = stream;
+          });
+      } else {
+        streamRef.current?.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
+      return !prev;
+    });
+  };
 
-    // start call once questions are loaded
-    useEffect(() => {
-        if (!questions.length) return;
-        const t = setTimeout(() => startCall(), 1000);
-        return () => clearTimeout(t);
-    }, [questions]);
-
-    const startCall = () => {
-        if (assistantSessionRef.current) return;
-
-        let questionList = "";
-        questions.forEach((q, index) => {
-            questionList += `${index + 1}. ${q.question}\n`;
-        });
-
-        const assistantOptions = {
-            name: "AI Recruiter",
-            firstMessage: `Hi ${Resume?.name || 'Candidate'}, ready for your interview for ${job.jobRole}?`,
-            transcriber: {
-                provider: "deepgram",
-                model: "nova-2",
-                language: "en-US",
-            },
-            voice: {
-                provider: "playht",
-                voiceId: "jennifer",
-            },
-            model: {
-                provider: "openai",
-                model: "gpt-4",
-                messages: [
-                    {
-                        role: "system",
-                        content: `
-You are an AI interviewer.
-please also do survilence on camera ${webcam} is on than go else say candidate to on the camera first to start the interview
-Ask ONE question at a time.
-If question is problem-solving, tell candidate to use Code Editor.
-Do not skip questions.
-Questions:
-${questionList}
-
-                        `.trim(),
-                    },
-                ],
-            },
-        };
-
-        try {
-            const session = vapi.start(assistantOptions);
-            assistantSessionRef.current = session;
-            reconnectRef.current.attempts = 0;
-
-            session.on('transcript', (t) => {
-                if (!t?.isFinal || mute || answeredRef.current) return;
-                answeredRef.current = true;
-                handleAutoAnswer(t.text);
-            });
-
-            session.on('message', (msg) => {
-                const isAssistant =
-                    msg?.role === 'assistant' ||
-                    msg?.source === 'assistant';
-                if (isAssistant) {
-                    setAssistantSpeaking(true);
-                    setTimeout(() => setAssistantSpeaking(false), 800);
-                }
-            });
-
-            session.on('error', attemptReconnect);
-            session.on('call-ended', attemptReconnect);
-
-            toast.success('Pannel activate Please say hi to start the interview');
-        } catch (err) {
-            console.error('Vapi start error', err);
-            attemptReconnect(err);
-        }
-    };
-
-    const attemptReconnect = () => {
-        if (reconnectRef.current.attempts >= MAX_RECONNECT) return;
-        reconnectRef.current.attempts += 1;
-        setTimeout(() => {
-            assistantSessionRef.current = null;
-            startCall();
-        }, 1000);
-    };
-
-    const sendAssistantMessage = async (text) => {
-        try {
-            assistantSessionRef.current?.send?.(text);
-        } catch (e) {}
-    };
-
-    const raiseHand = () => {
-        setHandRaised(v => {
-            if (!v) sendAssistantMessage("Candidate raised hand. Ask if they need help.");
-            return !v;
-        });
-    };
-
-    const startCamera = async () => {
-        if (mediaStreamRef.current) return;
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        mediaStreamRef.current = stream;
-        if (videoRef.current) videoRef.current.srcObject = stream;
-    };
-
-    const stopCamera = () => {
-        mediaStreamRef.current?.getTracks()?.forEach(t => t.stop());
-        mediaStreamRef.current = null;
-        if (videoRef.current) videoRef.current.srcObject = null;
-    };
-
-    const toggleCamera = () => {
-        webcam ? stopCamera() : startCamera();
-        setWebCam(v => !v);
-    };
-
-    const toggleMute = () => setMute(v => !v);
-
-    const handleAutoAnswer = (text) => {
-        const q = questions[currentIndex];
-        if (!q) return;
-
-        const payloadAnswer = {
-            question: q.question,
-            category: q.category,
-            answerText: text,
-        };
-
-        const updated = [...answers, payloadAnswer];
-        setAnswers(updated);
-        postAnswersToServer(updated);
-
-        setTimeout(() => {
-            answeredRef.current = false;
-            if (currentIndex < questions.length - 1) {
-                setCurrentIndex(i => i + 1);
+  const toogleCamera = async () => {
+    setVideoOff(prev => {
+      if (prev === true) {
+        navigator.mediaDevices.getUserMedia({ video: true })
+          .then(stream => {
+            videoStreamRef.current = stream;
+            if (videoRef.current) {
+              videoRef.current.srcObject = stream;
             }
-        }, 1200);
-    };
-
-    const postAnswersToServer = async (answersToSend) => {
-        try {
-            await axios.post('http://localhost:8080/api/gemini/save-answers', {
-                userId,
-                interviewId: null,
-                answers: answersToSend,
-            });
-        } catch (err) {
-            console.error('Error saving answers', err);
+          });
+      } else {
+        videoStreamRef.current?.getTracks().forEach(track => track.stop());
+        videoStreamRef.current = null;
+        if (videoRef.current) {
+          videoRef.current.srcObject = null;
         }
-    };
+      }
+      return !prev;
+    });
+  };
 
-    const submitAnswer = (answerPayload) => {
-        const q = questions[currentIndex];
+  const handleConsole = () => {
+    setConsole(prev => !prev);
+  };
 
-        if (q?.category === "problem-solving") {
-            sendAssistantMessage(`
-Evaluate the following ${answerPayload.language} code:
-${answerPayload.code}
-Give interview-style feedback.
-            `);
-        }
+  const handleIDE = () => {
+    setCode(prev => !prev);
+  };
 
-        const updated = [...answers, {
-            ...answerPayload,
-            question: q.question,
-            category: q.category,
-        }];
+  const handlePeople = () => {
+    setPeople(prev => !prev);
+  };
 
-        setAnswers(updated);
-        postAnswersToServer(updated);
-        if (currentIndex < questions.length - 1) setCurrentIndex(i => i + 1);
-    };
+  return (
+    <div className="w-full min-h-screen bg-zinc-900 pt-20">
 
-    const leaveCall = () => {
-        try {
-            assistantSessionRef.current?.stop();
-        } catch (e) {}
-        toast.success('Left the interview');
-    };
-
-    return (
-        <div className='min-h-screen pt-20'>
-            <div className='min-w-screen shadow-md flex justify-between px-10'>
-                <div className='flex justify-evenly gap-3'>
-                    <div>
-                        <IoShield  size={25}/>
-                    </div>
-
-                    <div>
-                        <p>{Date.now()}</p>
-                    </div>
-                </div>
-                <div className='flex justify-evenly gap-10'>
-                    <div onClick={raiseHand} style={{cursor:'pointer'}}>
-                        <div><IoHandLeft  size={25} className={`mx-1 ${handRaised ? 'text-yellow-400' : 'text-gray-400'}`} /></div>
-                        <p className='text-sm text-gray-400'>Hand</p>
-                    </div>
-
-                    <div>
-                        <p className='text-2xl text-black'>|</p>
-                    </div>
-
-
-                    <div onClick={() => { setShowConsole(s => !s); setShowCode(false); }} style={{cursor:'pointer'}}>
-                        <div><FaLaptopCode  size={25} className='mx-2 text-indigo-600' /></div>
-                        <p className='text-sm text-gray-400'>console</p>
-                    </div>
-
-                    <div onClick={() => { setShowCode(s => !s); setShowConsole(false); }} style={{cursor:'pointer'}}>
-                        <div><VscVscode size={25} className='mx-1 text-blue-400' /></div>
-                        <p className='text-sm text-gray-400'>code</p>
-                    </div>
-
-                    <div>
-                        <p className='text-2xl text-black'>|</p>
-                    </div>
-
-                    {
-                        mute ? (
-                            <div onClick={toggleMute} style={{ cursor: 'pointer' }}>
-                                <div><FaMicrophoneSlash size={25} className='mx-1 text-gray-400' /></div>
-                                <p className='text-sm text-gray-400'>unmute</p>
-                            </div>
-                        ) : (
-                            <div onClick={toggleMute} style={{ cursor: 'pointer' }}>
-                                <div><FaMicrophone size={25} className='mx-1 text-red-600' /></div>
-                                <p className='text-sm text-gray-400'>mute</p>
-                            </div>
-                        )
-                    }
-
-                    {
-                        webcam === false ? (
-                            <div onClick={toggleCamera} style={{ cursor: 'pointer' }}>
-                                <div><FaVideoSlash size={25} className='mx-1 text-gray-400' /></div>
-                                <p className='text-sm text-gray-400 mx-1'>on</p>
-                            </div>
-                        ) : (
-                            <div onClick={toggleCamera} style={{ cursor: 'pointer' }}>
-                                <div><FaVideo size={25} className='mx-1 text-red-600' /></div>
-                                <p className='text-sm text-gray-400 mx-1'>off</p>
-                            </div>
-                        )
-                    }
-
-                    <div onClick={leaveCall} style={{ cursor: 'pointer' }}>
-                        <div><IoCall  size={25} className='mx-1 text-red-600' /></div>
-                        <p className='text-sm text-gray-400'>Leave</p>
-                    </div>
-                </div>
-            </div>
-
-            <div className='flex justify-between gap-10 py-10 px-10'>
-                <div>
-
-                    <div className={`shadow-md w-90 h-60 rounded-md flex items-center justify-center ${assistantSpeaking ? 'animate-pulse ring-2 ring-indigo-400' : ''}`}>
-                        <div>
-                            <p className='text-center font-semibold'>Interviewer (AI)</p>
-                        </div>
-                    </div>
-
-                    <div className='shadow-md w-90 h-60 rounded-md mt-2 overflow-hidden'>
-                        {webcam ? (
-                            <video ref={videoRef} autoPlay muted playsInline className='w-full h-full object-cover' />
-                        ) : (
-                            <div className='w-full h-full flex items-center justify-center text-gray-400'>
-                                <p>No camera</p>
-                            </div>
-                        )}
-                        <p className='text-center'>You</p>
-                    </div>
-
-                </div>
-                    
-                <div>
-                    <div className='flex gap-4'>
-                        {showConsole && (
-                            <Console 
-                                question={questions[currentIndex]}
-                                onSubmitAnswer={(payload) => submitAnswer(payload)}
-                                onOpenCode={() => { setShowCode(true); setShowConsole(false); }}
-                            />
-                        )}
-
-                        {showCode && (
-                            <Code
-                                question={questions[currentIndex]}
-                                onSubmitAnswer={(payload) => submitAnswer(payload)}
-                            />
-                        )}
-                    </div>
-                </div>
-            </div>
+      <div className="flex justify-between px-5 shadow-md py-2">
+        <div>
+          <ShieldUser size={30} className="mx-4" />
+          <p>protected</p>
         </div>
-    );
+
+        <div className="flex justify-evenly gap-10">
+          <div className="cursor-pointer" onClick={handlePeople}>
+            <Users size={25} className="mx-3" />
+            <p>people</p>
+          </div>
+
+          <div className="cursor-pointer" onClick={handleIDE}>
+            <Code size={25} className="mx-1" />
+            <p>code</p>
+          </div>
+
+          <div className="cursor-pointer" onClick={handleConsole}>
+            <SquareChevronRight size={25} className="mx-3" />
+            <p>console</p>
+          </div>
+
+          <p className="text-3xl">|</p>
+
+          {mic ? (
+            <div className="text-gray-400 cursor-pointer" onClick={toggleMic}>
+              <MicOff size={25} />
+              <p>off</p>
+            </div>
+          ) : (
+            <div className="cursor-pointer" onClick={toggleMic}>
+              <Mic size={25} className="text-red-600 animate-pulse" />
+              <p className="text-gray-400 mx-1">on</p>
+            </div>
+          )}
+
+          {videoOff ? (
+            <div className="text-gray-400 cursor-pointer" onClick={toogleCamera}>
+              <VideoOff size={25} />
+              <p>off</p>
+            </div>
+          ) : (
+            <div className="cursor-pointer" onClick={toogleCamera}>
+              <Video size={25} className="text-red-600 animate-pulse" />
+              <p className="text-gray-400">on</p>
+            </div>
+          )}
+
+          <div className="cursor-pointer">
+            <Phone size={25} className="text-red-600" />
+            <p className="text-gray-400">leave</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex justify-between px-10 py-10">
+        <div className="w-[40%]">
+
+          <div className="bg-zinc-800 w-90 h-60 rounded-md">
+            <div className="flex justify-center items-center">
+              <span className="bg-gray-400 w-50 h-50 rounded-full my-5 flex justify-center items-center">
+                <h1 className="text-8xl text-black py-12">I</h1>
+              </span>
+            </div>
+            <p className="text-center">Interviewer</p>
+          </div>
+
+          <div className="bg-zinc-800 w-90 h-60 rounded-md my-18">
+            {!videoOff ? (
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-cover rounded-md"
+              />
+            ) : (
+              <div className="flex justify-center items-center h-full">
+                <span className="bg-gray-400 w-50 h-50 rounded-full flex justify-center items-center">
+                  <h1 className="text-8xl text-black">Y</h1>
+                </span>
+              </div>
+            )}
+            <p className="text-center mt-2">You</p>
+          </div>
+
+        </div>
+
+        {myconsole && <Console questions={questions} />}
+        {mycode && <VsCode setLanguage={setLanguage} setCoding={setCoding} />}
+        {people && <User mic={mic} video={videoOff} />}
+
+      </div>
+    </div>
+  );
 };
 
 export default Meet;

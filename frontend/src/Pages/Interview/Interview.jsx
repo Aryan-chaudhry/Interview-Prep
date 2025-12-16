@@ -6,6 +6,8 @@ import { useAuthStore } from '../../Store/useAuthStore';
 import Join from './join';
 import PageNotFound from '../PageNotFound';
 import Meet from './Meet';
+import { Navigate } from 'react-router-dom';
+
 
 const Interview = () => {
   const location = useLocation();
@@ -17,7 +19,6 @@ const Interview = () => {
   const hasRequestedRef = useRef(false);
   const [request, sendRequest] = useState(false);
 
-  const { id } = useParams();
   const userId = authUser?._id;
 
   const job = location.state?.job;
@@ -79,7 +80,7 @@ const Interview = () => {
       ) : (
         <div className="min-h-screen flex justify-center items-center">
           {/* <div className="rounded-md shadow-md w-[90%] h-150 mt-20 flex items-center justify-center"> */}
-            { request === true && <Meet userId={userId} job={job} Resume={Resume}/>}
+            { request === true && <Navigate to="/activated"/>}
           {/* </div> */}
         </div>
       )}

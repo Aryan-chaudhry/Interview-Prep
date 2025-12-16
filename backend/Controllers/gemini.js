@@ -53,27 +53,27 @@ const setInterview = async (req, res) => {
     const jobRole = Job.jobRole;
     const companyName = Job.companyName;
     
-    // const result = await ai.models.generateContent({
-    //   model: "gemini-2.5-flash",
-    //   contents: [
-    //     {
-    //       role: "user",
-    //       parts: [
-    //         {
-    //           text: isPremium
-    //             ? `According to the prompt given to you, generate HARD and challenging interview questions.
-    //             Job: ${JSON.stringify(Job)}
-    //             Resume: ${Resume}
-    //             Prompt: ${prompt}`
-    //                             : `According to the prompt given to you, generate interview questions.
-    //             Job: ${JSON.stringify(Job)}
-    //             Resume: ${Resume}
-    //             Prompt: ${prompt}`,
-    //         },
-    //       ],
-    //     },
-    //   ],
-    // });
+  //   const result = await ai.models.generateContent({
+  //     model: "gemini-2.5-flash",
+  //     contents: [
+  //       {
+  //         role: "user",
+  //         parts: [
+  //           {
+  //             text: isPremium
+  //               ? `According to the prompt given to you, generate littlebut hard interview question make sure 80% question is from resume interview questions.
+  //               Job: ${JSON.stringify(Job)}
+  //               Resume: ${Resume}
+  //               Prompt: ${prompt}`
+  //                               : `According to the prompt given to you, generate easy interview questions make sre 90% question is from resume.
+  //               Job: ${JSON.stringify(Job)}
+  //               Resume: ${Resume}
+  //               Prompt: ${prompt}`,
+  //           },
+  //         ],
+  //       },
+  //     ],
+  //   });
 
   //   const aiText = result.candidates[0].content.parts[0].text;
 
@@ -114,7 +114,7 @@ const setInterview = async (req, res) => {
 const AiResponse = {
   "questions": [
     {
-      "question": "Explain how React's reconciliation algorithm works and how you would optimize a React application with large component trees.",
+      "question": "Explain how React is different from html.",
       "category": "technical",
       "score": 10
     },
@@ -225,6 +225,8 @@ const getInterviewQuestion = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 }
+
+
 
 
 module.exports = {getResponse, setInterview, getInterviewQuestion};

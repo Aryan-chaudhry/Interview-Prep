@@ -4,7 +4,7 @@ import { useLocation } from 'react-router-dom';
 import Home from './Pages/Home/Home.jsx';
 import Login from './Components/Login.jsx';
 import Signup from './Components/Signup.jsx';
-
+import Meet from './Pages/Interview/Meet.jsx';
 import Complete from './Pages/Complete.jsx';
 import Profile from './Components/Profile.jsx';
 
@@ -61,10 +61,17 @@ function App() {
 
 
           <Route
-            path="/interview/:id"
+            path="/interview"
             element={           
               //  authUser ? <Interview /> : <Navigate to='/login'/>
               <Interview/>
+            }
+          />
+
+          <Route
+            path='/activated'
+            element={           
+              <Meet/>
             }
           />
 
