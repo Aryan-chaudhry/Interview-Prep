@@ -51,7 +51,7 @@ const Navbar = () => {
               <div
                 className={`absolute right--1 mt-3 w-40 rounded-xl shadow-xl px-2 py-2 animate-fadeIn z-50 ${isDark ? 'bg-base-200 border border-slate-800' : 'bg-white border border-teal-100'}`}>
 
-                  <Link to="/profile" onClick={() => setProfilePanel(false)} className={`flex items-center gap-2 p-2 rounded-md transition ${isDark ? 'hover:bg-slate-800' : 'hover:bg-teal-50'}`}>
+                  <Link to={`profile/u/${authUser?._id}`} onClick={() => setProfilePanel(false)} className={`flex items-center gap-2 p-2 rounded-md transition ${isDark ? 'hover:bg-slate-800' : 'hover:bg-teal-50'}`}>
                     <User className={`w-4 h-4 ${isDark ? 'text-white' : 'text-teal-600'}`} />
                     Profile
                   </Link>

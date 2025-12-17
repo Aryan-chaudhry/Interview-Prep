@@ -119,7 +119,7 @@ const JobCard = ({
         )}
 
         <div className="flex items-center gap-2">
-          <button className="btn btn-ghost btn-sm">Details</button>
+          {/* <button className="btn btn-ghost btn-sm">Details</button> */}
           <button onClick={() => handleAiAssist(job)} className="btn btn-teal btn-sm flex items-center gap-1 bg-teal-600 text-white hover:bg-teal-500" title="Chat with AI about this role">
             <Sparkles size={15} className="text-white" />
           </button>

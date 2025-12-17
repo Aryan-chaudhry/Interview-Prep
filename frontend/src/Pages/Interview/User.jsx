@@ -43,7 +43,7 @@ const User = ({mic, video}) => {
 
             <div className="flex items-center gap-3 text-gray-400">
               <Mic size={14} className="text-green-400" />
-              <Video size={14} className="text-green-400" />
+              <VideoOff size={14} className="text-gray-400" />
             </div>
           </div>
         </div>

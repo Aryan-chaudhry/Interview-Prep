@@ -12,10 +12,12 @@ import {
   Video,
   VideoOff,
   SquareChevronRight,
+  ChartNoAxesColumnDecreasing,
 } from 'lucide-react';
 import User from './User';
 import VsCode from './Code';
 import Console from './Console';
+import Vapi from '@vapi-ai/web';
 
 const Meet = () => {
 
@@ -26,8 +28,10 @@ const Meet = () => {
   const videoStreamRef = useRef(null);
   const videoRef = useRef(null);
   const apiTriggger = useRef(false);
+  const vapi = new Vapi(import.meta.env.VITE_VAPI_PUBLIC_KEY)
 
   const [questions, setQuestion] = useState([]);
+  const [inteviewInfo, setInterviewInfo] = useState(false);
   const [mic, setMicOff] = useState(true); // off by default
   const [videoOff, setVideoOff] = useState(true); // off by default
   const [myconsole, setConsole] = useState(false);
@@ -35,6 +39,8 @@ const Meet = () => {
   const [people, setPeople] = useState(false);
   const [language, setLanguage] = useState('');
   const [coding, setCoding] = useState('');
+  const [activeUser, setActiveUser] = useState(false);
+  const [InterviewEnded, setInterviewEnded] =useState(false);
 
   const getQuestion = async () => {
     try {
@@ -42,7 +48,8 @@ const Meet = () => {
         `http://localhost:8080/api/interview-question/${userId}`
       );
       setQuestion(response.data.Questions);
-      console.log(response.data.Questions)
+      setInterviewInfo(true);
+      // console.log(response.data.Questions)
       toast.success('please enable full screen mode by press f11');
     } catch (error) {
       toast.error('Server Error');
@@ -57,6 +64,101 @@ const Meet = () => {
     apiTriggger.current = true;
     getQuestion();
   }, [userId]);
+
+  useEffect(()=>{
+    inteviewInfo && startCall()
+  }, [inteviewInfo])
+
+  const startCall = () => {
+    if (!questions || questions.length === 0) return;
+
+    let questionList = "";
+
+    questions.forEach((item, index) => {
+      questionList += (item.question || item);
+      if (index !== questions.length - 1) {
+        questionList += `question : ${index+2} ` ;
+      }
+    });
+
+    // console.log("QuestionList", questionList);
+
+    const assistantOptions = {
+      name: "Expert Ai interviewer Agent",
+      firstMessage: "Hi candidate , how are you? Ready for your interview?",
+      transcriber: {
+        provider: "deepgram",
+        model: "nova-2",
+        language: "en-US",
+      },
+      voice: {
+        provider: "playht",
+        voiceId: "jennifer",
+      },
+      model: {
+        provider: "openai",
+        model: "gpt-4",
+        messages: [
+          {
+            role: "system",
+            content: `
+    You are an AI voice assistant conducting interviews.
+    Your job is to ask candidates provided interview questions, assess their responses.
+    Begin the conversation with a friendly introduction, setting a relaxed yet professional tone. Example:
+    "Hey there! Welcome to the interview. Let’s get started with a few questions!"
+    Ask one question at a time and wait for the candidate's response before proceeding. Keep the questions clear and concise. Below Are
+    the questions ask one by one:
+    Questions: ${questionList}
+    If the candidate struggles, offer hints or rephrase the question without giving away the answer. Example:
+    "Need a hint? Think about how React tracks component updates!"
+    Provide brief, encouraging feedback after each answer. Example:
+    "Nice! That’s a solid answer."
+    "Hmm, not quite! Want to try again?"
+    also the problem solving question are last 2 question which are code with code editor 
+    coding language : ${language}
+    mycode : ${coding}
+    Keep the conversation natural and engaging—use casual phrases like "Alright, next up..." or "Let’s tackle a tricky one!"
+    After all questions questions, wrap up the interview smoothly by summarizing their performance. Example:
+    "That was great! You handled some tough questions well. Keep sharpening your skills!"
+    End on a positive note:
+    "Thanks for chatting! Hope to see you crushing projects soon!"
+    Key Guidelines:
+    ✔ Be friendly, engaging, and witty 
+    ✔ Keep responses short and natural, like a real conversation
+    ✔ Adapt based on the candidate’s confidence level
+    ✔ Ensure the interview remains focused on React
+            `.trim(),
+          },
+        ],
+      },
+    };
+
+    vapi.start(assistantOptions)
+
+  };
+
+  vapi.on("call-start", () => {
+    console.log("Call has been initiated");
+    toast('Call Connected...')
+    setActiveUser(false);
+  });
+
+  vapi.on("speech-start", () => {
+    console.log("Assistant speech has started");
+    setActiveUser(false);
+  });
+  
+  vapi.on("speech-ended", () => {
+    console.log("Assitant speech has ended");
+    setActiveUser(true);
+  });
+
+  vapi.on("call-end", () => {
+    console.log("Call has been Ended")
+    toast('Interview Ended')
+  })
+
+
 
   const toggleMic = async () => {
     setMicOff(prev => {
@@ -105,6 +207,42 @@ const Meet = () => {
   const handlePeople = () => {
     setPeople(prev => !prev);
   };
+
+  
+
+  const leaveMeeting = () => {
+    toast.custom((t) => (
+      <div className="bg-white rounded-lg shadow-lg p-4 w-[360px]">
+        <p className="font-semibold text-gray-900">
+          Are you absolutely sure?
+        </p>
+        <p className="text-sm text-gray-500 mt-1">
+          This action cannot be undone. Your interview will end.
+        </p>
+
+        <div className="flex justify-end gap-3 mt-4">
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="px-4 py-1.5 rounded-md border text-gray-700 hover:bg-gray-100"
+          >
+            Cancel
+          </button>
+
+          <button
+            onClick={() => {
+              toast.dismiss(t.id);
+              vapi.stop();
+              setInterviewEnded(true);
+            }}
+            className="px-4 py-1.5 rounded-md bg-teal-600 text-white hover:bg-teal-700"
+          >
+            Continue
+          </button>
+        </div>
+      </div>
+    ), { duration: Infinity });
+  };
+
 
   return (
     <div className="w-full min-h-screen bg-zinc-900 pt-20">
@@ -157,7 +295,7 @@ const Meet = () => {
             </div>
           )}
 
-          <div className="cursor-pointer">
+          <div className="cursor-pointer" onClick={leaveMeeting}>
             <Phone size={25} className="text-red-600" />
             <p className="text-gray-400">leave</p>
           </div>
@@ -167,14 +305,22 @@ const Meet = () => {
       <div className="flex justify-between px-10 py-10">
         <div className="w-[40%]">
 
-          <div className="bg-zinc-800 w-90 h-60 rounded-md">
+          <div className="bg-zinc-800 w-90 h-60 rounded-md relative">
             <div className="flex justify-center items-center">
-              <span className="bg-gray-400 w-50 h-50 rounded-full my-5 flex justify-center items-center">
+              {!activeUser && InterviewEnded === false &&  (
+                <span className="absolute inset-0 flex justify-center items-center">
+                  <span className="rounded-full bg-teal-500 opacity-50 animate-ping w-40 h-40" />
+                </span>
+              )}
+
+              <span className="bg-gray-400 w-50 h-50 rounded-full my-5 flex justify-center items-center relative z-10">
                 <h1 className="text-8xl text-black py-12">I</h1>
               </span>
             </div>
+
             <p className="text-center">Interviewer</p>
           </div>
+
 
           <div className="bg-zinc-800 w-90 h-60 rounded-md my-18">
             {!videoOff ? (
@@ -187,6 +333,11 @@ const Meet = () => {
               />
             ) : (
               <div className="flex justify-center items-center h-full">
+                {activeUser && (
+                  <span className="absolute inset-0 flex justify-center items-center">
+                    <span className="rounded-full bg-teal-500 opacity-50 animate-ping w-40 h-40" />
+                  </span>
+                )}
                 <span className="bg-gray-400 w-50 h-50 rounded-full flex justify-center items-center">
                   <h1 className="text-8xl text-black">Y</h1>
                 </span>

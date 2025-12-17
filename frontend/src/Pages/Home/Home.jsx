@@ -197,7 +197,7 @@ const Home = () => {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-semibold">Hello, {authUser.name}</h1>
-            <p className="text-sm text-gray-500">Prepare for your <i>Dream Job</i>..</p>
+            <p className="text-sm text-gray-500">Preparing for your <i>Dream Job</i>..</p>
           </div>
         </div>
 

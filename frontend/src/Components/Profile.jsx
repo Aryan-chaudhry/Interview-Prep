@@ -114,7 +114,7 @@ const Profile = () => {
       </div>
 
       <div className="bg-base-300 w-250 mt-8 rounded-xl h-180 ">
-            <div className="w-full flex justify-center gap-10 px-10 h-60 mt-7 mx-0">
+            <div className="w-full flex justify-center gap-10 px-10 h-50 mt-7 mx-0 ">
               <div className=" w-1/2 bg-base-200 rounded-lg">
                   <div>
 
@@ -131,7 +131,7 @@ const Profile = () => {
 
             </div>
 
-            <div className="w-full flex justify-center gap-10 px-10 h-60 mt-9 mx-0">
+            <div className="w-full flex justify-center gap-10 px-10 h-50 mt-9 mx-0">
               <div className=" w-1/4 bg-base-200 rounded-lg">
                   <div>
 
@@ -148,7 +148,7 @@ const Profile = () => {
 
             </div>
 
-            <div className="w-full flex justify-center gap-10 px-10 h-30 mt-9 mx-0">
+            <div className="w-full flex justify-center gap-10 px-10 h-50 mt-9 mx-0">
               <div className=" w-full bg-base-200 rounded-lg">
                   <div>
 

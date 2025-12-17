@@ -83,7 +83,7 @@ function App() {
           />
 
           <Route
-            path="/Profile"
+            path={`profile/u/:userid`}
             element={
               authUser ? <Profile/> : <Navigate to='/login'/>
             }

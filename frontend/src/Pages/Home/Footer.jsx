@@ -11,7 +11,7 @@ const Footer = () => {
       className={`
          border-t-2
         ${isDark
-          ? 'bg-slate-900 border-teal-800 text-teal-200'
+          ? 'bg-gray-900 text-teal-200'
           : 'bg-white border-teal-100 text-teal-800'}
       `}
     >
