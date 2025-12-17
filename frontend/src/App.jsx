@@ -16,6 +16,7 @@ import { useThemeStore } from './Store/useThemeStore.js';
 import Setting from './Components/Setting.jsx';
 import Interview from './Pages/Interview/Interview.jsx'
 import PageNotFound from './Pages/PageNotFound.jsx';
+import ErrorPage from './Pages/ErrorPage.jsx';
 
 
 function App() {
@@ -79,6 +80,14 @@ function App() {
             path="/Complete/:token"
             element={
               authUser ? <Complete /> : <Navigate to='/login'/>
+            }
+          />
+
+          <Route
+            path="/error"
+            element={
+              // authUser ? <ErrorPage /> : <Navigate to='/login'/>
+              <ErrorPage/>
             }
           />
 

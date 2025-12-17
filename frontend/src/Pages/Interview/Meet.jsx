@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../Store/useAuthStore';
+import ErrorPage from '../ErrorPage';
+
 import {
   ShieldUser,
   Users,
@@ -24,11 +27,13 @@ const Meet = () => {
   const { authUser } = useAuthStore();
   const userId = authUser?._id;
 
+  const navigate = useNavigate();
   const streamRef = useRef(null);
   const videoStreamRef = useRef(null);
   const videoRef = useRef(null);
   const apiTriggger = useRef(false);
   const vapi = new Vapi(import.meta.env.VITE_VAPI_PUBLIC_KEY)
+  
 
   const [questions, setQuestion] = useState([]);
   const [inteviewInfo, setInterviewInfo] = useState(false);
@@ -133,9 +138,19 @@ const Meet = () => {
       },
     };
 
-    vapi.start(assistantOptions)
+    
+
+    try {
+      // vapi.start(assistantOptions)
+    } catch (error) {
+      toast.error('Pannel disconnected!  ')
+      // redirect to erro page
+      navigate('/error') // todo implement token verification here please
+    }
 
   };
+
+ 
 
   vapi.on("call-start", () => {
     console.log("Call has been initiated");
@@ -232,7 +247,8 @@ const Meet = () => {
             onClick={() => {
               toast.dismiss(t.id);
               vapi.stop();
-              setInterviewEnded(true);
+              setInterviewEnded(true); 
+              // todo implement navigation to complete page with token verification
             }}
             className="px-4 py-1.5 rounded-md bg-teal-600 text-white hover:bg-teal-700"
           >
@@ -307,7 +323,7 @@ const Meet = () => {
 
           <div className="bg-zinc-800 w-90 h-60 rounded-md relative">
             <div className="flex justify-center items-center">
-              {!activeUser && InterviewEnded === false &&  (
+              {!activeUser  &&  (
                 <span className="absolute inset-0 flex justify-center items-center">
                   <span className="rounded-full bg-teal-500 opacity-50 animate-ping w-40 h-40" />
                 </span>
@@ -333,7 +349,7 @@ const Meet = () => {
               />
             ) : (
               <div className="flex justify-center items-center h-full">
-                {activeUser && (
+                {activeUser &&   (
                   <span className="absolute inset-0 flex justify-center items-center">
                     <span className="rounded-full bg-teal-500 opacity-50 animate-ping w-40 h-40" />
                   </span>
