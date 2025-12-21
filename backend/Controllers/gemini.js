@@ -1,6 +1,8 @@
 const { GoogleGenAI } = require("@google/genai");
 const prompt = require('../Intelligence/geminiInterviewDB');
+const resultprompt = require('../Intelligence/geminiResultDB')
 const interviewModel = require('../Models/interviewModel');
+const resultModel = require('../Models/resultModel');
 
 const ai =  new GoogleGenAI({
                 apiKey: process.env.GEMINI_API_KEY,
@@ -43,7 +45,7 @@ const getResponse = async (req, res) => {
 };
 
 const setInterview = async (req, res) => {
-  // try {
+  try {
     const { User, Job, Resume, isPremium } = req.body;
 
     if (!User || !Job) {
@@ -52,151 +54,96 @@ const setInterview = async (req, res) => {
 
     const jobRole = Job.jobRole;
     const companyName = Job.companyName;
+    const jobId = Job._id;
     
-  //   const result = await ai.models.generateContent({
-  //     model: "gemini-2.5-flash",
-  //     contents: [
-  //       {
-  //         role: "user",
-  //         parts: [
-  //           {
-  //             text: isPremium
-  //               ? `According to the prompt given to you, generate littlebut hard interview question make sure 80% question is from resume interview questions.
-  //               Job: ${JSON.stringify(Job)}
-  //               Resume: ${Resume}
-  //               Prompt: ${prompt}`
-  //                               : `According to the prompt given to you, generate easy interview questions make sre 90% question is from resume.
-  //               Job: ${JSON.stringify(Job)}
-  //               Resume: ${Resume}
-  //               Prompt: ${prompt}`,
-  //           },
-  //         ],
-  //       },
-  //     ],
-  //   });
 
-  //   const aiText = result.candidates[0].content.parts[0].text;
+    // 🔹 1. CHECK IF INTERVIEW ALREADY EXISTS
+    const existingInterview = await interviewModel.findOne({
+      jobId: jobId,
+    });
 
-  //   const cleanedResponse = aiText
-  //     .replace(/```json/g, "")
-  //     .replace(/```/g, "")
-  //     .trim();
-
-  //   const aiResponseJson = JSON.parse(cleanedResponse);
-  //   console.log(aiResponseJson);
-
-  //   // ✅ 3. Save valid interview document
-  //   const interviewStatus = new interviewModel({
-  //     userId: User,
-  //     companyName,
-  //     jobRole,
-  //     interviewType: "mixed", 
-  //     questions: aiResponseJson.questions,
-  //     totalScore: 125,          
-  //   });
-
-  //   await interviewStatus.save();
-  //   console.log("Interview Status Saved")
-  //   return res.status(201).json({
-  //     message: "Interview Activated",
-  //     interview: interviewStatus,
-  //   });
-
-  // } catch (error) {
-  //   console.error("error in generating ai questions", error);
-
-  //   return res.status(500).json({
-  //     message: "Failed to generate interview questions",
-  //     error: error.message,
-  //   });
-  //  }
-
-const AiResponse = {
-  "questions": [
-    {
-      "question": "Explain how React is different from html.",
-      "category": "technical",
-      "score": 10
-    },
-    {
-      "question": "Describe how JWT-based authentication works in a MERN stack application and how you would secure protected API routes.",
-      "category": "technical",
-      "score": 10
-    },
-    {
-      "question": "How would you design a scalable REST API in Node.js and Express for handling high traffic, such as an e-commerce platform like Amazon?",
-      "category": "technical",
-      "score": 10
-    },
-    {
-      "question": "Explain MongoDB indexing strategies and how they improve query performance in real-world applications.",
-      "category": "technical",
-      "score": 10
-    },
-    {
-      "question": "What challenges have you faced while using Socket.io for real-time applications, and how did you handle scalability?",
-      "category": "technical",
-      "score": 10
-    },
-    {
-      "question": "Tell me about a time you worked on a complex full-stack project and how you managed tasks across frontend and backend.",
-      "category": "behavioral",
-      "score": 5
-    },
-    {
-      "question": "Describe a situation where you had to debug a critical production issue. How did you approach it?",
-      "category": "behavioral",
-      "score": 5
-    },
-    {
-      "question": "How do you prioritize features when deadlines are tight and requirements change frequently?",
-      "category": "behavioral",
-      "score": 5
-    },
-    {
-      "question": "Explain a time when you had to collaborate with teammates having different technical opinions. How did you resolve it?",
-      "category": "behavioral",
-      "score": 5
-    },
-    {
-      "question": "What motivates you to continuously solve coding problems and participate in competitive programming?",
-      "category": "behavioral",
-      "score": 5
-    },
-    {
-      "question": "Problem: Given a string, find the length of the longest substring without repeating characters.\nExample: Input \"abcabcbb\" → Output 3 (\"abc\").\nConstraints: 1 ≤ string length ≤ 10^5; string consists of ASCII characters.",
-      "category": "problem-solving",
-      "score": 25
-    },
-    {
-      "question": "Problem: Given two strings s and t, determine if t is an anagram of s.\nExample: Input s = \"anagram\", t = \"nagaram\" → Output true.\nConstraints: 1 ≤ length of s and t ≤ 10^5; strings contain lowercase English letters.",
-      "category": "problem-solving",
-      "score": 25
+    if (existingInterview) {
+      return res.status(200).json({
+        message: "Interview already activated",
+        interview: existingInterview,
+        fromCache: true, // optional flag
+      });
     }
-  ]
-}
 
+    // 🔹 2. IF NOT EXISTS → CALL GEMINI
+    const result = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: [
+        {
+          role: "user",
+          parts: [
+            {
+              text: isPremium
+                ? `
+Generate slightly hard interview questions.
+Rules:
+- 80% questions MUST be based on resume
+- Remaining based on job role
+- Output ONLY valid JSON
+- Follow schema exactly
 
+Job: ${JSON.stringify(Job)}
+Resume: ${Resume}
+Prompt: ${prompt}
+`
+                : `
+Generate easy interview questions.
+Rules:
+- 90% questions MUST be based on resume
+- Output ONLY valid JSON
+- Follow schema exactly
 
-  try {
+Job: ${JSON.stringify(Job)}
+Resume: ${Resume}
+Prompt: ${prompt}
+`,
+            },
+          ],
+        },
+      ],
+    });
+
+    const aiText = result.candidates[0].content.parts[0].text;
+
+    // 🔹 3. CLEAN + PARSE RESPONSE
+    const cleanedResponse = aiText
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .trim();
+
+    const aiResponseJson = JSON.parse(cleanedResponse);
+
+    if (!aiResponseJson?.questions?.length) {
+      throw new Error("Invalid AI response format");
+    }
+
+    // 🔹 4. SAVE INTERVIEW
     const interviewStatus = new interviewModel({
       userId: User,
+      jobId:jobId,
       companyName,
       jobRole,
-      interviewType: "mixed", 
-      questions: AiResponse.questions,
-      totalScore: 125,          
+      interviewType: "mixed",
+      questions: aiResponseJson.questions,
+      totalScore: 125,
     });
 
     await interviewStatus.save();
-    console.log("Interview Saved")
 
     return res.status(201).json({
       message: "Interview Activated",
       interview: interviewStatus,
+      fromCache: false,
     });
+
   } catch (error) {
-    console.log("Error", error);
+    console.error("Error in generating interview:", error);
+
     return res.status(500).json({
       message: "Failed to generate interview questions",
       error: error.message,
@@ -204,20 +151,25 @@ const AiResponse = {
   }
 };
 
+
 const getInterviewQuestion = async (req, res) => {
-  const userId = req.params.id;
-  console.log(userId);
+  const jobId = req.params.id;
+  console.log("jobId : ", jobId);
 
   try {
-    const findInterview = await interviewModel.findOne({userId});
-    if(!findInterview){
-      return res.status(404).json({message:"Access Denied"});
-    }
-    else{
+    const findInterview = await interviewModel
+    .findOne({jobId})
+    .sort({ createdAt: -1 })
+    .exec();
+
+    if(findInterview){
       res.status(200).json({
         Questions:findInterview.questions,
       })
-      console.log('Question send to frontend')
+      console.log('Question send to frontend')  
+    }
+    else{
+       return res.status(404).json({message:"Access Denied"});
     }
     
   } catch (error) {
@@ -227,6 +179,88 @@ const getInterviewQuestion = async (req, res) => {
 }
 
 
+const generateResult = async (req, res) => {
+  console.log("RESULT TRIGGER....................................");
+
+  const jobId = req.params.id;
+  const { conversation, userId } = req.body;
+
+  console.log("conversation:", conversation);
+  console.log("userId:", userId);
+  console.log("jobId : ", jobId );
 
 
-module.exports = {getResponse, setInterview, getInterviewQuestion};
+  if (!conversation || !conversation.length) {
+    return res.status(400).json({ message: "Conversation missing" });
+  }
+
+  const latestInterview = await interviewModel
+    .findOne({ jobId });
+
+  if (!latestInterview) {
+    return res.status(404).json({ message: "Interview not found" });
+  }
+
+  const questions = latestInterview.questions;
+  console.log("Received Interview Questions:", questions);
+
+  const payLoad = {
+    conversation,
+    questions,
+    Rulebook: resultprompt,
+  }
+
+  const finalText = JSON.stringify(payLoad, null, 2);
+
+  console.log("Payload for Gemini:", finalText);
+
+  try {
+    
+
+    const result = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: finalText }],
+        },
+      ],
+    });
+
+    const aiText =
+      result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    const cleanedResponse = aiText
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .trim();
+
+    const aiResponseJson = JSON.parse(cleanedResponse);
+
+    console.log("FINAL AI RESULT JSON:", aiResponseJson);
+
+    const Result = new resultModel({
+      userId,
+      jobId:jobId,
+      totalScore: aiResponseJson.feedback.rating.TotalScore,  
+      confidenceLevel: aiResponseJson.feedback.rating.ConfidenceLevel,
+      knowledgeLevel: aiResponseJson.feedback.rating.KnowledgeLevel,
+      feedback: aiResponseJson.feedback.summary + " " + aiResponseJson.feedback.recommendationMsg,
+    });
+
+    await Result.save();
+    console.log("Interview Result Saved");
+    
+  } catch (error) {
+    console.error("AI RESULT ERROR:", error);
+    return res.status(500).json({
+      message: "Failed to generate interview result",
+      error: error.message,
+    });
+  }
+};
+
+
+
+
+module.exports = {getResponse, setInterview, getInterviewQuestion, generateResult};

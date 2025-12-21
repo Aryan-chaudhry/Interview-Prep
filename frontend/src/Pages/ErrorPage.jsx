@@ -1,9 +1,25 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
+import React, { use } from "react";
+import { useNavigate, useLocation,useParams } from "react-router-dom";
 import { KeyRound, RefreshCcw } from "lucide-react";
+import PageNotFound from "./PageNotFound";
 
  function ErrorPage() {
-  const navigate = useNavigate()  
+  const navigate = useNavigate() 
+  const location = useLocation();
+  
+  const {id} = useParams();
+  const idFromState = location.state?.token;
+
+  if(id !== idFromState) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-b from-zinc-950 to-zinc-900 px-6">
+        <PageNotFound/>
+      </div>
+    )
+  }
+    
+  
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-linear-to-b from-zinc-950 to-zinc-900 px-6">
       <div className="w-full max-w-xl bg-white/5 border border-zinc-800 rounded-2xl p-10 shadow-xl text-center">
@@ -32,6 +48,7 @@ import { KeyRound, RefreshCcw } from "lucide-react";
 
         {/* Actions */}
         <div className="mt-8 flex justify-center gap-4">
+            {/* todo integrate mail setup (send mail to user) */}
           <button
             onClick={() => window.location.reload()}
             className="inline-flex items-center gap-2 px-5 py-2 rounded-md bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium shadow"

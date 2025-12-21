@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../Store/useAuthStore';
@@ -12,9 +12,11 @@ import { Navigate } from 'react-router-dom';
 const Interview = () => {
   const location = useLocation();
   const { authUser } = useAuthStore();
+  const navigate = useNavigate();
 
   const [joinInterview, setInterview] = useState(false);
   const [loading, setLoading] = useState(false);
+
 
   const hasRequestedRef = useRef(false);
   const [request, sendRequest] = useState(false);
@@ -24,6 +26,8 @@ const Interview = () => {
   const job = location.state?.job;
   const Resume = location.state?.resumeContent;
   const isPremium = location.state?.isAPremium;
+
+  
 
   if (!job) {
     return <PageNotFound />;
@@ -80,7 +84,10 @@ const Interview = () => {
       ) : (
         <div className="min-h-screen flex justify-center items-center">
           {/* <div className="rounded-md shadow-md w-[90%] h-150 mt-20 flex items-center justify-center"> */}
-            { request === true && <Navigate to="/activated"/>}
+            { request === true && 
+              navigate('/activated', {state:{job}})
+            
+            }
           {/* </div> */}
         </div>
       )}

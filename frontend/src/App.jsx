@@ -64,8 +64,7 @@ function App() {
           <Route
             path="/interview"
             element={           
-              //  authUser ? <Interview /> : <Navigate to='/login'/>
-              <Interview/>
+               authUser ? <Interview /> : <Navigate to='/login'/> 
             }
           />
 
@@ -84,10 +83,10 @@ function App() {
           />
 
           <Route
-            path="/error"
+            path="/error/:id"
             element={
               // authUser ? <ErrorPage /> : <Navigate to='/login'/>
-              <ErrorPage/>
+              <ErrorPage />
             }
           />
 

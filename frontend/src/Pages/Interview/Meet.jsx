@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../Store/useAuthStore';
@@ -16,6 +16,7 @@ import {
   VideoOff,
   SquareChevronRight,
   ChartNoAxesColumnDecreasing,
+  CloudHail,
 } from 'lucide-react';
 import User from './User';
 import VsCode from './Code';
@@ -26,13 +27,23 @@ const Meet = () => {
 
   const { authUser } = useAuthStore();
   const userId = authUser?._id;
+  
 
   const navigate = useNavigate();
+  const location = useLocation();
+
   const streamRef = useRef(null);
   const videoStreamRef = useRef(null);
   const videoRef = useRef(null);
   const apiTriggger = useRef(false);
-  const vapi = new Vapi(import.meta.env.VITE_VAPI_PUBLIC_KEY)
+  const vapiRef = useRef(null);
+  const conversationRef = useRef([]);
+
+
+  const job = location?.state?.job;
+  console.log(job);
+  const jobId = job?._id;
+  const jobRole = job?.jobRole;
   
 
   const [questions, setQuestion] = useState([]);
@@ -46,11 +57,12 @@ const Meet = () => {
   const [coding, setCoding] = useState('');
   const [activeUser, setActiveUser] = useState(false);
   const [InterviewEnded, setInterviewEnded] =useState(false);
+  const [interviewconversation, setConversation] = useState([]);
 
   const getQuestion = async () => {
     try {
       const response = await axios.get(
-        `http://localhost:8080/api/interview-question/${userId}`
+        `http://localhost:8080/api/interview-question/${jobId}`
       );
       setQuestion(response.data.Questions);
       setInterviewInfo(true);
@@ -74,7 +86,7 @@ const Meet = () => {
     inteviewInfo && startCall()
   }, [inteviewInfo])
 
-  const startCall = () => {
+  const startCall = async () => {
     if (!questions || questions.length === 0) return;
 
     let questionList = "";
@@ -109,20 +121,23 @@ const Meet = () => {
             content: `
     You are an AI voice assistant conducting interviews.
     Your job is to ask candidates provided interview questions, assess their responses.
-    Begin the conversation with a friendly introduction, setting a relaxed yet professional tone. Example:
-    "Hey there! Welcome to the interview. Let’s get started with a few questions!"
+    Begin the conversation with a friendly introduction, setting a relaxed yet professional tone. before starting please tell aboit policies of the interviews to the user like if any illegal activities you will be stricktly disconnected from this meeting (in a hard and angry attitude) Example:
+    "Hey there! Welcome to the interview. Ready for ${jobRole}? Let’s get started with a few questions!"
     Ask one question at a time and wait for the candidate's response before proceeding. Keep the questions clear and concise. Below Are
     the questions ask one by one:
     Questions: ${questionList}
+    
     If the candidate struggles, offer hints or rephrase the question without giving away the answer. Example:
-    "Need a hint? Think about how React tracks component updates!"
-    Provide brief, encouraging feedback after each answer. Example:
+    "Need a hint? Think about how React tracks component updates!" or go to the next question directly.
+    dont Provide brief, encouraging feedback after each answer and dont give answer of that question after user answer please.
+    provide the encourage feedback like Example:
     "Nice! That’s a solid answer."
     "Hmm, not quite! Want to try again?"
     also the problem solving question are last 2 question which are code with code editor 
     coding language : ${language}
     mycode : ${coding}
     Keep the conversation natural and engaging—use casual phrases like "Alright, next up..." or "Let’s tackle a tricky one!"
+    but if candidate if making fun or doing illegal activites or making fun of interview using tone or any other activities during the interview you have to disconnected from the meeting immediately in a hard and angry attitude.
     After all questions questions, wrap up the interview smoothly by summarizing their performance. Example:
     "That was great! You handled some tough questions well. Keep sharpening your skills!"
     End on a positive note:
@@ -141,39 +156,96 @@ const Meet = () => {
     
 
     try {
-      // vapi.start(assistantOptions)
+      vapiRef.current?.start(assistantOptions)
     } catch (error) {
       toast.error('Pannel disconnected!  ')
-      // redirect to erro page
-      navigate('/error') // todo implement token verification here please
+      const token = await axios.get('http://localhost:8080/api/test-token');
+      navigate(`/error/${token}`, {state:{token:token}}) // todo implement token verification here please
     }
 
   };
 
  
 
-  vapi.on("call-start", () => {
-    console.log("Call has been initiated");
-    toast('Call Connected...')
-    setActiveUser(false);
-  });
+  useEffect(() => {
+    // initialize Vapi once and attach handlers
+    vapiRef.current = new Vapi(import.meta.env.VITE_VAPI_PUBLIC_KEY);
+    const vapi = vapiRef.current;
 
-  vapi.on("speech-start", () => {
-    console.log("Assistant speech has started");
-    setActiveUser(false);
-  });
-  
-  vapi.on("speech-ended", () => {
-    console.log("Assitant speech has ended");
-    setActiveUser(true);
-  });
+    const onCallStart = () => {
+      console.log('Call has been initiated');
+      toast('Call Connected...');
+      setActiveUser(false);
+    };
 
-  vapi.on("call-end", () => {
-    console.log("Call has been Ended")
-    toast('Interview Ended')
-  })
+    const onSpeechStart = () => {
+      console.log('Assistant speech has started');
+      setActiveUser(false);
+    };
+
+    const onSpeechEnded = () => {
+      console.log('Assitant speech has ended');
+      setActiveUser(true);
+    };
+
+    const onCallEnd = () => {
+      console.log('Call has been Ended');
+      toast('Interview Ended');
+      generateResult();
+    };
+
+    const onMessage = (message) => {
+      if (Array.isArray(message?.conversation)) {
+        console.log("Conversation (VALID): ", message.conversation);
+        conversationRef.current = message.conversation; // ✅ IMPORTANT
+        setConversation(message.conversation);          // keep UI same
+      }
+    };
 
 
+
+
+    try {
+      vapi.on('call-start', onCallStart);
+      vapi.on('speech-start', onSpeechStart);
+      vapi.on('speech-ended', onSpeechEnded);
+      vapi.on('call-end', onCallEnd);
+      vapi.on('message', onMessage);
+    } catch (e) {
+      // ignore attach errors
+    }
+
+    return () => {
+      try {
+        vapi.stop && vapi.stop();
+      } catch (e) {}
+      vapiRef.current = null;
+    };
+  }, []);
+
+  const generateResult = async () => {
+      try {
+        if (!jobId) return;
+        const finalConversation = conversationRef.current;
+
+        if (!Array.isArray(finalConversation) || finalConversation.length === 0) {
+          console.warn("Interview conversation not ready yet");
+          return;
+        }
+
+        console.log("Interview Conversation sent for result generation:", finalConversation);
+
+        await axios.post(
+          `http://localhost:8080/api/interview-result/${jobId}`,
+          {
+            conversation: finalConversation,
+            userId: userId,
+          }
+        );
+      } catch (error) {
+        console.log('error in generating result at backend', error);
+      }
+    };
 
   const toggleMic = async () => {
     setMicOff(prev => {
@@ -225,7 +297,7 @@ const Meet = () => {
 
   
 
-  const leaveMeeting = () => {
+  const leaveMeeting = async () => {
     toast.custom((t) => (
       <div className="bg-white rounded-lg shadow-lg p-4 w-[360px]">
         <p className="font-semibold text-gray-900">
@@ -244,9 +316,17 @@ const Meet = () => {
           </button>
 
           <button
-            onClick={() => {
+            onClick={async () => {
               toast.dismiss(t.id);
-              vapi.stop();
+              try {
+                vapiRef.current?.stop();
+                const res = await axios.get('http://localhost:8080/api/test-token');
+                const token = res.data.token
+                setTimeout(()=>{
+                  navigate(`/Complete/${token}`, {state:{token}});
+                }, 2000)
+
+              } catch (e) {}
               setInterviewEnded(true); 
               // todo implement navigation to complete page with token verification
             }}

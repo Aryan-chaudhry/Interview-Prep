@@ -7,7 +7,11 @@ const InterviewSchema = new mongoose.Schema(
       ref: "User", 
       required:true,    
     },
-
+    jobId:{
+      type:String,
+      ref:"job",
+      required:true,
+    },
     companyName: {
       type: String,
       trim: true,

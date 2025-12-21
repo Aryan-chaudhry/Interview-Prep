@@ -38,11 +38,13 @@ const Authentication = require('./Routers/Authentication.js');
 const completeTestToken = require('./Routers/TestComplete.js');
 const getJobs = require('./Routers/getJobs.js')
 const CommunicateWithAi = require('./Routers/gemini.js')
+const getResult = require('./Routers/Result.js')
 
 app.use('/api', Authentication);
 app.use('/api', completeTestToken);
 app.use('/api', getJobs);
 app.use('/api', CommunicateWithAi);
+app.use('/api', getResult);
 
 
 
