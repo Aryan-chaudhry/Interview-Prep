@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
 import { useAuthStore } from "../Store/useAuthStore";
-import { Camera, Mail, User } from "lucide-react";
+import { Camera, Mail, User, Star, Trash2, X, Reply } from "lucide-react";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { Bar, Line } from "react-chartjs-2";
+import { Bar, Line, Doughnut } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   BarElement,
+  ArcElement,
   PointElement,
   LineElement,
   Title,
@@ -21,6 +22,7 @@ ChartJS.register(
   CategoryScale,
   LinearScale,
   BarElement,
+  ArcElement,
   PointElement,
   LineElement,
   Title,
@@ -35,6 +37,8 @@ const Profile = () => {
   const [knowledgeLevel, setKnowledgeLevel] = useState([]);
   const [confidenceLevel, setConfidenceLevel] = useState([]);
   const [InterviewScore, setInterviewScore] = useState([]);
+  
+
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
@@ -79,24 +83,104 @@ const Profile = () => {
   }, [result]);
 
   // Rank calculation
-  const rank = (() => {
-    if (!InterviewScore.length) return "—";
+ const rank = (() => {
+  const BASE_RANK = 3000000;
 
-    const avgTotal =
-      InterviewScore.reduce((a, b) => a + b, 0) / InterviewScore.length;
-    const avgKnowledge =
-      knowledgeLevel.reduce((a, b) => a + b, 0) / knowledgeLevel.length;
-    const avgConfidence =
-      confidenceLevel.reduce((a, b) => a + b, 0) / confidenceLevel.length;
+  if (!InterviewScore.length) return BASE_RANK;
 
-    const finalScore =
-      avgTotal * 0.5 + avgKnowledge * 0.25 + avgConfidence * 0.25;
+  const avgTotal =
+    InterviewScore.reduce((a, b) => a + b, 0) / InterviewScore.length;
 
-    if (finalScore >= 85) return "A+";
-    if (finalScore >= 70) return "A";
-    if (finalScore >= 55) return "B";
-    return "C";
-  })();
+  const avgKnowledge =
+    knowledgeLevel.reduce((a, b) => a + b, 0) / knowledgeLevel.length;
+
+  const avgConfidence =
+    confidenceLevel.reduce((a, b) => a + b, 0) / confidenceLevel.length;
+
+  // Weighted performance score
+  const performanceScore =
+    avgTotal * 0.5 + avgKnowledge * 0.25 + avgConfidence * 0.25;
+
+  // Normalize to 0–1 (since total is out of 125)
+  const normalized = Math.min(performanceScore / 125, 1);
+
+  // Rank improvement up to ~2.5M
+  const rankImprovement = Math.floor(normalized * 2500000);
+
+  return Math.max(BASE_RANK - rankImprovement, 1);
+})();
+
+
+  // email setup in inbox 
+  // Build inbox mails from `result` (backend data)
+  const inboxMails = result.map((r, index) => {
+    const score = r.totalScore || 0;
+    const confidence = r.confidenceLevel || 0;
+    const knowledge = r.knowledgeLevel || 0;
+
+    return {
+      id: index,
+      from: "AI Interview System",
+      subject: `${authUser?.name}, Interview Feedback – Score ${score}/125`,
+      preview: `Score ${score}/125 · Confidence ${confidence} · Knowledge ${knowledge}`,
+      date: new Date(r.createdAt).toLocaleString(),
+      body: `
+Hi ${authUser?.name},\n\nHere is your detailed interview feedback:\n\n• Total Score: ${score} / 125\n• Confidence Level: ${confidence}\n• Knowledge Level: ${knowledge}\n\n${
+        score >= 100
+          ? "Excellent performance. You are among the top candidates globally."
+          : score >= 70
+          ? "Good performance. Improving confidence can significantly boost your rank."
+          : "Needs improvement. Focus on fundamentals and structured answers."
+      }\n\nRecommendation:\nComplete more interviews to improve your global rank and consistency.\n\nRegards,\nAI Interview Evaluation Engine\n      `,
+    };
+  });
+
+  const [mailList, setMailList] = useState([]);
+  const [selectedMail, setSelectedMail] = useState(null);
+  const [readIds, setReadIds] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // initialize mailList when backend data arrives
+  useEffect(() => {
+    // show newest messages first
+    const sorted = [...inboxMails].sort((a, b) => b.id - a.id);
+    setMailList(sorted);
+    if (sorted.length > 0) setSelectedMail(sorted[0]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result]);
+
+  const handleMailClick = (mail) => {
+    setSelectedMail(mail);
+    if (!readIds.includes(mail.id)) setReadIds((prev) => [...prev, mail.id]);
+  };
+
+  const filteredMails = mailList.filter((m) => {
+    if (!searchTerm) return true;
+    const q = searchTerm.toLowerCase();
+    return (
+      m.subject.toLowerCase().includes(q) ||
+      m.preview.toLowerCase().includes(q) ||
+      m.from.toLowerCase().includes(q)
+    );
+  });
+
+  const removeMail = (id) => {
+    setMailList((prev) => prev.filter((m) => m.id !== id));
+    if (selectedMail?.id === id) {
+      const idx = mailList.findIndex((m) => m.id === id);
+      const next = mailList[idx + 1] || mailList[idx - 1] || null;
+      setSelectedMail(next);
+    }
+  };
+
+  const archiveMail = (id) => {
+    // local archive: same as remove for now
+    removeMail(id);
+  };
+
+  const handleReply = () => {
+    toast.success("Reply to Interview Engine is freezed!")
+  }
 
   /* ===================== STREAK LOGIC (NEW) ===================== */
 
@@ -230,16 +314,46 @@ const Profile = () => {
                   ),
                   datasets: [
                     {
-                      label: "Total Score",
+                      label: "Interview Score (out of 125)",
                       data: InterviewScore,
-                      backgroundColor: "teal",
+                      backgroundColor: "#14b8a6", // teal-500 (premium look)
+                      borderRadius: 8,
                     },
                   ],
                 }}
-                options={{ responsive: true, maintainAspectRatio: false }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      max: 125,
+                      ticks: {
+                        stepSize: 25,
+                      },
+                      title: {
+                        display: true,
+                        text: "Score ( /125 )",
+                      },
+                    },
+                  },
+                  plugins: {
+                    tooltip: {
+                      callbacks: {
+                        label: (ctx) => `${ctx.raw} / 125`,
+                      },
+                    },
+                    legend: {
+                      labels: {
+                        font: { weight: "600" },
+                      },
+                    },
+                  },
+                }}
                 height={220}
                 width={380}
               />
+
             )}
             <p className="text-gray-400 text-center">Score</p>
           </div>
@@ -256,14 +370,14 @@ const Profile = () => {
                       label: "Confidence",
                       data: confidenceLevel,
                       borderColor: "red",
-                      backgroundColor: "rgba(255, 99, 132, 0.2)",
+                      backgroundColor: "red",
                       tension: 0.3,
                     },
                     {
                       label: "Knowledge",
                       data: knowledgeLevel,
                       borderColor: "blue",
-                      backgroundColor: "rgba(54, 162, 235, 0.2)",
+                      backgroundColor: "blue",
                       tension: 0.3,
                     },
                   ],
@@ -279,13 +393,131 @@ const Profile = () => {
 
         {/* Row 2 */}
         <div className="w-full flex justify-center gap-10 px-10 h-50 mt-9">
-          <div className="w-1/4 bg-base-200 rounded-lg">
-            <p className="text-4xl font-bold text-center mt-8">{rank}</p>
-            <p className="text-gray-400 text-center">Rank</p>
+          <div className="w-1/4 bg-base-200 rounded-lg flex justify-center item-center">
+            <div className="w-1/4 bg-base-200 rounded-lg flex flex-col items-center justify-center">
+              <div className="w-40 h-40">
+                <Doughnut
+                  data={{
+                    labels: ["Improved", "Remaining"],
+                    datasets: [
+                      {
+                        data: [
+                          3000000 - rank,
+                          rank,
+                        ],
+                        backgroundColor: ["#14b8a6", "#e5e7eb"],
+                        borderWidth: 0,
+                        cutout: "75%",
+                      },
+                    ],
+                  }}
+                  options={{
+                    plugins: {
+                      tooltip: { enabled: true },
+                      legend: { display: false },
+                    },
+                  }}
+                />
+              </div>
+
+              <div className="absolute text-center">
+                <p className="text-sm text-gray-400">Global Rank</p>
+                <p className="text-2xl font-medium text-teal-500">
+                  {rank.toLocaleString()}
+                </p>
+                <p className="text-gray-400 text-sm">
+                  out of 3000000
+                </p>
+
+              </div>
+            </div>
+
           </div>
 
-          <div className="w-3/4 bg-base-200 rounded-lg">
-            <p className="text-gray-400 text-center">Inbox</p>
+          <div className="w-3/4 bg-white rounded-lg">
+            {/* <p className="text-gray-400 text-center">Inbox</p> */}
+            <div className="w-full h-full bg-white mt-3  relative">
+              {/* List view (full width) */}
+              <div className="px-4 py-3 flex items-center justify-between border-b border-gray-100">
+                <div className="flex items-center gap-3">
+                  <input type="checkbox" className="checkbox checkbox-xs" />
+                  <div className="text-sm font-semibold text-black">Inbox</div>
+                  <div className="text-xs text-gray-400">{mailList.length} messages</div>
+                </div>
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Search mail"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="input input-sm input-bordered w-64 bg-base-200 text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="max-h-96 overflow-auto">
+                {filteredMails.length === 0 && (
+                  <div className="p-4 text-sm text-gray-500">No messages</div>
+                )}
+
+                {filteredMails.map((mail) => {
+                  const isRead = readIds.includes(mail.id);
+                  return (
+                    <div
+                      key={mail.id}
+                      onClick={() => handleMailClick(mail)}
+                      className={`flex items-center gap-3 px-4 py-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100 ${
+                        selectedMail?.id === mail.id ? "bg-gray-50" : ""
+                      }`}
+                    >
+                      <div className="w-8 text-center text-sm text-gray-500">{isRead ? '' : '●'}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-center gap-2">
+                          <div className="flex items-center gap-3">
+                            <div className="font-medium truncate">{mail.from}</div>
+                            <div className="text-sm text-gray-400 truncate">{mail.preview}</div>
+                          </div>
+                          <div className="text-xs text-gray-400">{mail.date}</div>
+                        </div>
+                        <div className="mt-2">
+                          <div className={`text-base font-semibold truncate ${isRead ? 'text-gray-700' : 'text-black'}`}>{mail.subject}</div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Full message overlay (opens on click) */}
+              {selectedMail && (
+                <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 p-6" onClick={() => setSelectedMail(null)}>
+                  <div className="bg-white shadow-2xl rounded-lg overflow-hidden max-h-[80vh] w-full max-w-4xl" onClick={(e) => e.stopPropagation()}>
+                    <div className="px-6 py-4 border-b border-gray-100 flex items-start justify-between">
+                      <div className="flex-1">
+                        <h2 className="text-2xl font-semibold text-gray-800 mb-2">{selectedMail.subject}</h2>
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                          <div className="font-medium text-gray-700">{selectedMail.from}</div>
+                          <div>•</div>
+                          <div>{selectedMail.date}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 ml-4">
+                        <button onClick={handleReply} className="btn btn-ghost btn-sm"><Reply className="w-4 h-4" /> Reply</button>
+                        <button onClick={() => archiveMail(selectedMail.id)} className="btn btn-ghost btn-sm"><Trash2 className="w-4 h-4" /></button>
+                        <button onClick={() => { removeMail(selectedMail.id); }} className="btn btn-ghost btn-sm">Delete</button>
+                        <button onClick={() => setSelectedMail(null)} className="btn btn-ghost btn-sm"><X className="w-4 h-4" /></button>
+                      </div>
+                    </div>
+                    <div className="px-6 py-4 overflow-auto h-[calc(80vh-88px)]">
+                      <div className="prose max-w-none text-gray-700">
+                        <pre className="whitespace-pre-wrap break-words text-sm">{selectedMail.body}</pre>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            </div>
           </div>
         </div>
 

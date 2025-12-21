@@ -23,7 +23,7 @@ Rules:
 - i give you all question and also conversation from question search all question in coonversation with their answer if question not found five score 0. if question found but answer not found still give 0. if question and answer both found ansalyse asnwer deeply of that question and than give score based on question score and aboove criteria ok 
 - Penalize skipped or avoided questions
 - Summary must be EXACTLY 3 short lines
-- Recommendation must be either "Recommended" or "Not Recommended"
+- Recommendation must be either "Recommended" or "Not Recommended and recommendationMsg must explain the decision concisely. and Recommended only when user give answer of every question and score good in all criteria"
 
 Return JSON in EXACT format:
 
@@ -33,6 +33,7 @@ Return JSON in EXACT format:
       "TotalScore": 0,
       "ConfidenceLevel": 0,
       "KnowledgeLevel": 0,
+      "Rank":0
       "IllegalActivitiesDuringInterview": 0
     },
     "summary": "Line 1. Line 2. Line 3.",

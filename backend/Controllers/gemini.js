@@ -245,6 +245,7 @@ const generateResult = async (req, res) => {
       totalScore: aiResponseJson.feedback.rating.TotalScore,  
       confidenceLevel: aiResponseJson.feedback.rating.ConfidenceLevel,
       knowledgeLevel: aiResponseJson.feedback.rating.KnowledgeLevel,
+      Rank:aiResponseJson.feedback.rating.Rank,
       feedback: aiResponseJson.feedback.summary + " " + aiResponseJson.feedback.recommendationMsg,
     });
 

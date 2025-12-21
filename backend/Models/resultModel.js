@@ -33,7 +33,10 @@ const resultSchema = new mongoose.Schema(
       min: 0,
       max: 100,
     },
-
+    Rank:{
+      type:Number,
+      required:true,
+    },
     feedback: {
       type: String,
       required: true,
