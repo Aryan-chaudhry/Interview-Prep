@@ -22,6 +22,7 @@ import User from './User';
 import VsCode from './Code';
 import Console from './Console';
 import Vapi from '@vapi-ai/web';
+import PageNotFound from '../PageNotFound';
 
 const Meet = () => {
 
@@ -58,6 +59,14 @@ const Meet = () => {
   const [activeUser, setActiveUser] = useState(false);
   const [InterviewEnded, setInterviewEnded] =useState(false);
   const [interviewconversation, setConversation] = useState([]);
+
+  if(!job){
+    return(
+      <div className='flex justify-center item-center py-60'>
+        <PageNotFound/>
+      </div>
+    )
+  }
 
   const getQuestion = async () => {
     try {
@@ -206,13 +215,16 @@ const Meet = () => {
 
 
     try {
+      
       vapi.on('call-start', onCallStart);
       vapi.on('speech-start', onSpeechStart);
       vapi.on('speech-ended', onSpeechEnded);
       vapi.on('call-end', onCallEnd);
       vapi.on('message', onMessage);
+  
     } catch (e) {
-      // ignore attach errors
+      const token =  axios.get('http://localhost:8080/api/test-token');
+      navigate(`/error/${token}`, {state:{token:token}}) // todo implement token verification here please
     }
 
     return () => {

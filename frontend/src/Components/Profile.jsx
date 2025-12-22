@@ -182,7 +182,7 @@ Hi ${authUser?.name},\n\nHere is your detailed interview feedback:\n\n• Total 
     toast.success("Reply to Interview Engine is freezed!")
   }
 
-  /* ===================== STREAK LOGIC (NEW) ===================== */
+  /* ===================== STREAK LOGIC ===================== */
 
   const interviewDays = new Set(
     result.map((r) => r.createdAt?.split("T")[0])
@@ -316,7 +316,7 @@ Hi ${authUser?.name},\n\nHere is your detailed interview feedback:\n\n• Total 
                     {
                       label: "Interview Score (out of 125)",
                       data: InterviewScore,
-                      backgroundColor: "#14b8a6", // teal-500 (premium look)
+                      backgroundColor: "#14b8a6", // teal-500
                       borderRadius: 8,
                     },
                   ],
@@ -391,10 +391,9 @@ Hi ${authUser?.name},\n\nHere is your detailed interview feedback:\n\n• Total 
           </div>
         </div>
 
-        {/* Row 2 */}
+        {/* Row 2 - Inbox section */}
         <div className="w-full flex justify-center gap-10 px-10 h-50 mt-9">
-          <div className="w-1/4 bg-base-200 rounded-lg flex justify-center item-center">
-            <div className="w-1/4 bg-base-200 rounded-lg flex flex-col items-center justify-center">
+          <div className="w-1/4 bg-base-200 rounded-lg flex justify-center items-center relative">
               <div className="w-40 h-40">
                 <Doughnut
                   data={{
@@ -428,17 +427,14 @@ Hi ${authUser?.name},\n\nHere is your detailed interview feedback:\n\n• Total 
                 <p className="text-gray-400 text-sm">
                   out of 3000000
                 </p>
-
               </div>
-            </div>
-
           </div>
 
-          <div className="w-3/4 bg-white rounded-lg">
-            {/* <p className="text-gray-400 text-center">Inbox</p> */}
-            <div className="w-full h-full bg-white mt-3  relative">
-              {/* List view (full width) */}
-              <div className="px-4 py-3 flex items-center justify-between border-b border-gray-100">
+          {/* FIX: INBOX CONTAINER WITH SCROLLING */}
+          <div className="w-3/4 bg-white rounded-lg flex flex-col overflow-hidden">
+            <div className="w-full bg-white relative flex flex-col h-full">
+              {/* Inbox Header */}
+              <div className="px-4 py-3 flex items-center justify-between border-b border-gray-100 shrink-0">
                 <div className="flex items-center gap-3">
                   <input type="checkbox" className="checkbox checkbox-xs" />
                   <div className="text-sm font-semibold text-black">Inbox</div>
@@ -455,7 +451,8 @@ Hi ${authUser?.name},\n\nHere is your detailed interview feedback:\n\n• Total 
                 </div>
               </div>
 
-              <div className="max-h-96 overflow-auto">
+              {/* FIX: SCROLLABLE MESSAGE LIST */}
+              <div className="flex-1 overflow-y-auto">
                 {filteredMails.length === 0 && (
                   <div className="p-4 text-sm text-gray-500">No messages</div>
                 )}
@@ -488,7 +485,7 @@ Hi ${authUser?.name},\n\nHere is your detailed interview feedback:\n\n• Total 
                 })}
               </div>
 
-              {/* Full message overlay (opens on click) */}
+              {/* Full message overlay */}
               {selectedMail && (
                 <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 p-6" onClick={() => setSelectedMail(null)}>
                   <div className="bg-white shadow-2xl rounded-lg overflow-hidden max-h-[80vh] w-full max-w-4xl" onClick={(e) => e.stopPropagation()}>
@@ -516,12 +513,11 @@ Hi ${authUser?.name},\n\nHere is your detailed interview feedback:\n\n• Total 
                   </div>
                 </div>
               )}
-
             </div>
           </div>
         </div>
 
-        {/* Row 3 — GitHub Style Streak */}
+        {/* Row 3 — Streak */}
         <div className="w-full flex justify-center gap-10 px-10 h-50 mt-9">
           <div className="w-full bg-base-200 rounded-lg p-6">
             <p className="text-gray-400 mb-3 text-center">

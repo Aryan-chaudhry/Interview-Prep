@@ -54,7 +54,7 @@ const Interview = () => {
 
       setTimeout(()=>{
         sendRequest(true);
-      }, 5000);
+      }, 2000);
       
     } catch (error) {
       console.error(error);
@@ -85,6 +85,7 @@ const Interview = () => {
         <div className="min-h-screen flex justify-center items-center">
           {/* <div className="rounded-md shadow-md w-[90%] h-150 mt-20 flex items-center justify-center"> */}
             { request === true && 
+              
               navigate('/activated', {state:{job}})
             
             }

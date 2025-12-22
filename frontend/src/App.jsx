@@ -17,6 +17,7 @@ import Setting from './Components/Setting.jsx';
 import Interview from './Pages/Interview/Interview.jsx'
 import PageNotFound from './Pages/PageNotFound.jsx';
 import ErrorPage from './Pages/ErrorPage.jsx';
+import ManualInterview from './Pages/Home/ManualInterview.jsx';
 
 
 function App() {
@@ -57,6 +58,13 @@ function App() {
             path="/"
             element={           
                authUser ? <Home /> : <Navigate to='/login'/>
+            }
+          />
+
+          <Route
+            path="/manual-interview"
+            element={           
+               authUser ? <ManualInterview /> : <Navigate to='/login'/>
             }
           />
 

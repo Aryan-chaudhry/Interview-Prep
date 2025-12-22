@@ -225,16 +225,9 @@ const Home = () => {
         {displayModel && (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
     <div className="relative w-full max-w-4xl mx-auto bg-base-300 rounded-xl shadow-2xl p-6 animate-scale-in">
-      
-      {/* Close Button */}
-      <button
-        onClick={() => setDisplayModel(false)}
-        className="absolute top-3 right-3 text-xl font-bold hover:scale-110 transition"
-      >
-        ✕
-      </button>
-
-      <ManualInterview />
+      {
+        navigate('/manual-interview')
+      }
     </div>
   </div>
 )}
