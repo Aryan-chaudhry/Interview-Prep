@@ -379,7 +379,7 @@ const Meet = () => {
 
           <p className="text-3xl">|</p>
 
-          {mic ? (
+          {/* {mic ? (
             <div className="text-gray-400 cursor-pointer" onClick={toggleMic}>
               <MicOff size={25} />
               <p>off</p>
@@ -389,7 +389,7 @@ const Meet = () => {
               <Mic size={25} className="text-red-600 animate-pulse" />
               <p className="text-gray-400 mx-1">on</p>
             </div>
-          )}
+          )} */}
 
           {videoOff ? (
             <div className="text-gray-400 cursor-pointer" onClick={toogleCamera}>

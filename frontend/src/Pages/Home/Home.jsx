@@ -214,7 +214,7 @@ const Home = () => {
 
         {/* FLOATING LEFT ACTION BUTTON */}
         <button onClick={() => setDisplayModel(true)}
-          className="fixed left-5 bottom-2 -translate-y-1/2 z-50 flex justify-center gap-3
+          className="fixed left-5 bottom-15 -translate-y-1/2 z-50 flex justify-center gap-3
                      bg-teal-500 text-white p-3  rounded-full shadow-xl 
                      hover:scale-110 transition-all duration-300 cursor-pointer"
           title="Quick Actions"
