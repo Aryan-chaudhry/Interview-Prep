@@ -1,8 +1,8 @@
-# Interview Prep — Fullstack AI Interview Platform
+<img width="1837" height="876" alt="image" src="https://github.com/user-attachments/assets/be54df4b-6041-4a44-8756-61fc397a7101" /># Interview Prep — Fullstack AI Interview Platform
 
-![App Screenshot](docs/screenshot.png)
 
-A fullstack interview preparation platform (Node.js backend + Vite React frontend) that evaluates mock interviews, stores results, and offers job listings and LiveKit integration.
+
+A fullstack interview preparation platform (Node.js backend + Vite React frontend) that evaluates mock interviews, stores results, and offers job listings.
 
 This repository contains two main apps:
 - `backend/` — Express API, AI integration, jobs seeder, MongoDB models and routers.
@@ -12,7 +12,7 @@ This repository contains two main apps:
 - AI-driven interview evaluation and feedback
 - Result history, confidence & knowledge charts, and global rank
 - Job listings (seedable via `jobs/jobs.json`) and seeder script
-- LiveKit token utilities for interview rooms
+- vapi utilities for interview rooms
 - Cloudinary integration for profile upload
 
 ## Quick Start (Development)
@@ -29,8 +29,6 @@ cd "Interview Prep"
 ```
 
 2) Create env files
-- Do NOT change existing production `.env` files. Instead copy the example below into two files as needed:
-
 ```bash
 cp .env.example backend/.env.example  # copy to keep as reference
 cp .env.example frontend/.env.example
@@ -116,16 +114,6 @@ CLOUDINARY_API_SECRET=your_api_secret
 # AI / Gemini (if used)
 GEMINI_API_KEY=your_gemini_api_key
 
-# LiveKit (if used for video rooms)
-LIVEKIT_API_KEY=your_livekit_key
-LIVEKIT_API_SECRET=your_livekit_secret
-LIVEKIT_URL=https://your.livekit.server
-
-# Optional: mailer / SMTP
-SMTP_HOST=smtp.mailprovider.com
-SMTP_PORT=587
-SMTP_USER=you@example.com
-SMTP_PASS=supersecret
 
 ```
 
@@ -134,7 +122,6 @@ SMTP_PASS=supersecret
 ```
 # Vite dev server
 VITE_API_BASE_URL=http://localhost:8080/api
-VITE_LIVEKIT_URL=https://your.livekit.server
 ```
 
 Notes:
@@ -173,18 +160,6 @@ Notes:
 - If file uploads fail: verify Cloudinary credentials.
 - If LiveKit rooms fail: verify LiveKit URL and keys.
 
-## Using the provided screenshot
 
-Place the screenshot image file at `docs/screenshot.png` (create `docs/` if missing) to display it above.
 
-## Contributing
 
-If you'd like me to:
-- audit and remove unused packages from `package.json`
-- create a concise `docker-compose` for local dev
-- generate a `Procfile` or deployment instructions for a specific host
-
-— tell me which item to do next.
-
----
-Generated on: 2025-12-22
