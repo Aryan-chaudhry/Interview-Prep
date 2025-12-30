@@ -28,15 +28,11 @@ git clone <repo-url>
 cd "Interview Prep"
 ```
 
-2) Create env files
-```bash
-cp .env.example backend/.env.example  # copy to keep as reference
-cp .env.example frontend/.env.example
-```
+
 
 Set real values in your local `.env` files (not tracked by git). See `.env.example` for required variables.
 
-3) Backend: install & run
+2) Backend: install & run
 
 ```bash
 cd backend
@@ -48,23 +44,13 @@ node app.js
 
 ```
 
-backend Env 
-PORT=8080
-MONGO_URI=
-JWT_SECRET=
-NODE_ENV=development
-
-GEMINI_API_KEY=
-CLOUDINARY_CLOUD_NAME=
-CLOUDINARY_API_KEY=
-CLOUDINARY_API_SECRET=
-INTERVIEW_AGENT=
 
 
 
 
 
-4) Frontend: install & run
+
+3) Frontend: install & run
 
 ```bash
 cd frontend
@@ -73,10 +59,8 @@ npm run dev
 # open the printed Vite URL (usually http://localhost:5173)
 ```
 
-frontend env 
-VITE_VAPI_PUBLIC_KEY
 
-5) Seed Jobs (optional)
+4) Seed Jobs (mandatory)
 
 The job listings live in `backend/jobs/jobs.json` and can be imported to the database with the seeder script:
 
